@@ -10,6 +10,9 @@ Upstream Sunflow (main app):
 This add-on bundles the full Sunflow app (frontend + backend) and runs as a **standalone** service inside Home Assistant.
 The Home Assistant integration in this repository is optional.
 
+If you want to install the integration via HACS, add `https://github.com/robotnikz/sunflow-ha` as a custom repository (type: Integration).
+Do not add the upstream repo `https://github.com/robotnikz/Sunflow` to HACS.
+
 ## Features
 
 - Ingress UI (no port exposure required)

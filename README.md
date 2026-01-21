@@ -11,6 +11,10 @@ The "main app" is **Sunflow**:
 This Home Assistant repository packages that app as a **complete, standalone add-on** (frontend + backend) that runs independently inside Home Assistant.
 The Home Assistant integration is **optional** and only needed if you want entities/sensors in Home Assistant.
 
+Important: do **not** add `https://github.com/robotnikz/Sunflow` to HACS as an *Integration*.
+That upstream repository is the standalone app, not a Home Assistant `custom_components/` integration.
+For HACS you must add **this** repository: `https://github.com/robotnikz/sunflow-ha`.
+
 Versioning note: the Home Assistant add-on and integration use independent versions (this repo release), and the bundled Sunflow app has its own upstream version.
 
 ## Install (Add-on)
