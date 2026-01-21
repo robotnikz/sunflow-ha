@@ -42,9 +42,13 @@ describe('services/api.ts (unit)', () => {
   });
 
   it('saveConfig POSTs JSON and throws on non-OK', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false } as any);
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: vi.fn(async () => ({ error: 'Invalid inverterIp (expected host[:port])' })),
+    } as any);
 
-    await expect(saveConfig({} as any)).rejects.toThrow('API call failed');
+    await expect(saveConfig({} as any)).rejects.toThrow('Invalid inverterIp');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, opts] = fetchMock.mock.calls[0];

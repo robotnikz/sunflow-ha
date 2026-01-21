@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Fix saving inverter address when users paste a full URL/path (now extracts `private-ip[:port]` safely).
+- Show the backend error message in the UI when settings save fails (helps diagnose invalid input or auth).
+
 ## 0.1.3
 
 - Fix saving settings in the Ingress UI when the add-on `admin_token` option is set (frontend now supports Bearer token auth stored locally).

@@ -239,7 +239,20 @@ const isAdminRequest = (req) => {
 
 const sanitizeInverterHost = (host) => {
     if (!host || typeof host !== 'string') return null;
-    const h = host.trim();
+    let h = host.trim();
+
+    // Be forgiving about input format (users often paste full URLs or paths).
+    // We only persist IPv4[:port] and keep the private-range constraint.
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(h)) {
+        // Only accept http/https URLs and extract IPv4[:port] from the authority.
+        // (Using URL() would drop default ports like :80, which users sometimes paste.)
+        const mUrl = /^https?:\/\/([0-9]{1,3}(?:\.[0-9]{1,3}){3})(?::([0-9]{1,5}))?(?:[\/?#]|$)/i.exec(h);
+        if (!mUrl) return null;
+        h = mUrl[1] + (mUrl[2] ? `:${mUrl[2]}` : '');
+    } else {
+        // Strip any path/query/fragment if user pasted `host/path?...` without scheme.
+        h = h.split('#')[0].split('?')[0].split('/')[0].trim();
+    }
 
     // Must be IPv4[:port] only. This keeps the inverter request constrained to typical LAN IPs.
     const m = /^([0-9]{1,3}(?:\.[0-9]{1,3}){3})(?::([0-9]{1,5}))?$/.exec(h);

@@ -102,7 +102,15 @@ export const saveConfig = async (config: SystemConfig): Promise<void> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config)
   });
-  if (!res.ok) throw new Error("API call failed");
+  if (!res.ok) {
+    try {
+      const j = await res.json();
+      if (j?.error) throw new Error(String(j.error));
+    } catch (e) {
+      if (e instanceof Error) throw e;
+    }
+    throw new Error(`Failed to save settings (HTTP ${res.status})`);
+  }
 };
 
 export const getSystemInfo = async (): Promise<SystemInfo> => {

@@ -482,8 +482,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
               <div className="space-y-4">
                   <h3 className="text-slate-300 font-bold border-b border-slate-700 pb-2">Connection & Date</h3>
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Inverter IP Address</label>
-                    <input type="text" value={formData.inverterIp} onChange={(e) => setFormData({...formData, inverterIp: e.target.value})} placeholder="e.g. 192.168.1.50" className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500" required />
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">Inverter Address</label>
+                                        <input type="text" value={formData.inverterIp} onChange={(e) => setFormData({...formData, inverterIp: e.target.value})} placeholder="e.g. 192.168.1.50 or http://192.168.1.50" className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500" required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-400 mb-2">System Commissioning Date</label>

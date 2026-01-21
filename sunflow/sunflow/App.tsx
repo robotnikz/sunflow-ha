@@ -87,7 +87,8 @@ const App: React.FC = () => {
       setRefreshTrigger(prev => prev + 1);
     } catch (e) {
       console.error(e);
-      alert("Failed to save settings");
+      const msg = e instanceof Error ? e.message : 'Failed to save settings';
+      alert(msg);
     }
   };
 

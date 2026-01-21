@@ -265,6 +265,13 @@ describe('Backend API (auth/admin)', () => {
       .set('Content-Type', 'application/json');
     expect(ok.status).toBe(200);
 
+    const okUrl = await request(app)
+      .post('/api/config')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ inverterIp: 'http://192.168.1.10:80/solar_api/v1/GetPowerFlowRealtimeData.fcgi' })
+      .set('Content-Type', 'application/json');
+    expect(okUrl.status).toBe(200);
+
     const getRes = await request(app).get('/api/config');
     expect(getRes.status).toBe(200);
     expect(getRes.body.inverterIp).toBe('192.168.1.10:80');
