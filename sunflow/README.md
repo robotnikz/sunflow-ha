@@ -10,7 +10,7 @@ It provides an Ingress UI (opens in the Home Assistant sidebar) and a local REST
 - Built-in health endpoint (`/api/info`) used by Supervisor watchdog
 - Optional Home Assistant integration available in this repository (sensors + config flow)
 
-Versioning: the Home Assistant add-on uses its own versioning (currently 0.1.0). It bundles upstream Sunflow app version 1.11.1.
+Versioning: the Home Assistant add-on uses its own versioning. It bundles upstream Sunflow app version 1.11.1.
 
 ## Getting started
 

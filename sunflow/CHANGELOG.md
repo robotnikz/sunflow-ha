@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Fix add-on build on ARM by using the public multi-arch Home Assistant add-on base image.
+- Add armhf support.
+
 ## 0.1.0
 
 - Home Assistant add-on packaging (Ingress UI, persistent `/data`, basic configuration options).
