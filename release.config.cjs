@@ -4,8 +4,8 @@ module.exports = {
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    "./scripts/semantic_release_notes.cjs",
     ["@semantic-release/changelog", { changelogFile: "sunflow/CHANGELOG.md" }],
+    "./scripts/semantic_release_notes.cjs",
     [
       "@semantic-release/exec",
       {

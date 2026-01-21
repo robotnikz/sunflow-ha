@@ -9,8 +9,12 @@ function readTextFileIfExists(path) {
 }
 
 module.exports = {
-  generateNotes: async (pluginConfig, context) => {
-    const baseNotes = context?.nextRelease?.notes || "";
+  prepare: async (pluginConfig, context) => {
+    const currentNotes = context?.nextRelease?.notes || "";
+
+    if (currentNotes.includes("### Upstream Sunflow (Main Project)")) {
+      return;
+    }
 
     const upstreamRepo = "https://github.com/robotnikz/Sunflow";
     const haRepo = "https://github.com/robotnikz/sunflow-ha";
@@ -18,23 +22,20 @@ module.exports = {
 
     const upstreamLine = upstreamTag ? `- Bundled upstream version: ${upstreamTag}` : "";
 
-    const extra = [
+    const footer = [
       "---",
-      "",
       "### Upstream Sunflow (Main Project)",
-      "",
       `- Standalone Docker app: ${upstreamRepo}`,
       upstreamLine,
-      "",
       "### Home Assistant Packaging",
-      "",
       `- Add-on + integration repo: ${haRepo}`,
       `- Upstream sync process: ${haRepo}/blob/main/docs/SYNCING.md`,
-      "",
     ]
       .filter(Boolean)
       .join("\n");
 
-    return `${baseNotes}\n\n${extra}`;
+    context.nextRelease.notes = currentNotes
+      ? `${currentNotes.trimEnd()}\n\n${footer}\n`
+      : `${footer}\n`;
   },
 };
