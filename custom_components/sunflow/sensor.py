@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
@@ -56,6 +56,9 @@ async def async_setup_entry(
             SunflowPVPowerSensor(coordinator, entry),
             SunflowLoadPowerSensor(coordinator, entry),
             SunflowGridPowerSensor(coordinator, entry),
+            SunflowBatteryPowerSensor(coordinator, entry),
+            SunflowBatteryChargePowerSensor(coordinator, entry),
+            SunflowBatteryDischargePowerSensor(coordinator, entry),
             SunflowBatterySocSensor(coordinator, entry),
         ],
         update_before_add=False,
@@ -102,6 +105,8 @@ class SunflowVersionSensor(_SunflowBaseSensor):
 class SunflowPVPowerSensor(_SunflowBaseSensor):
     _attr_name = "PV Power"
     _attr_native_unit_of_measurement = "W"
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
@@ -116,6 +121,8 @@ class SunflowPVPowerSensor(_SunflowBaseSensor):
 class SunflowLoadPowerSensor(_SunflowBaseSensor):
     _attr_name = "Load Power"
     _attr_native_unit_of_measurement = "W"
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
@@ -130,6 +137,8 @@ class SunflowLoadPowerSensor(_SunflowBaseSensor):
 class SunflowGridPowerSensor(_SunflowBaseSensor):
     _attr_name = "Grid Power"
     _attr_native_unit_of_measurement = "W"
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
@@ -139,6 +148,71 @@ class SunflowGridPowerSensor(_SunflowBaseSensor):
     def native_value(self):
         p = (self._coordinator.data.get("realtime") or {}).get("power") or {}
         return p.get("grid")
+
+
+class _SunflowBatteryPowerBase(_SunflowBaseSensor):
+    _attr_native_unit_of_measurement = "W"
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def _get_battery_power_w(self) -> float | None:
+        p = (self._coordinator.data.get("realtime") or {}).get("power") or {}
+        val = p.get("battery")
+        if val is None:
+            return None
+        try:
+            return float(val)
+        except (TypeError, ValueError):
+            return None
+
+
+class SunflowBatteryPowerSensor(_SunflowBatteryPowerBase):
+    _attr_name = "Battery Power"
+
+    def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_sunflow_battery_power"
+
+    @property
+    def native_value(self):
+        # Convention (Sunflow UI):
+        #  - positive = discharging (battery -> load/grid)
+        #  - negative = charging (pv/grid -> battery)
+        return self._get_battery_power_w()
+
+
+class SunflowBatteryChargePowerSensor(_SunflowBatteryPowerBase):
+    _attr_name = "Battery Charge Power"
+
+    def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_sunflow_battery_charge_power"
+
+    @property
+    def native_value(self):
+        p = self._get_battery_power_w()
+        if p is None:
+            return None
+        if p < 0:
+            return abs(p)
+        return 0
+
+
+class SunflowBatteryDischargePowerSensor(_SunflowBatteryPowerBase):
+    _attr_name = "Battery Discharge Power"
+
+    def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_sunflow_battery_discharge_power"
+
+    @property
+    def native_value(self):
+        p = self._get_battery_power_w()
+        if p is None:
+            return None
+        if p > 0:
+            return p
+        return 0
 
 
 class SunflowBatterySocSensor(_SunflowBaseSensor):

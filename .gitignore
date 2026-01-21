@@ -12,6 +12,12 @@
 # Python/venv (accidental)
 **/.venv/
 
+# Python bytecode
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
 # Test artifacts
 **/test-results/
 **/.pytest_cache/

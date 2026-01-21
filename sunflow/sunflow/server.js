@@ -1344,14 +1344,20 @@ app.get('/api/dynamic-pricing/awattar/compare', async (req, res) => {
         db.all("SELECT valid_from, cost_per_kwh, feed_in_tariff FROM tariffs ORDER BY valid_from ASC", [], (tErr, tariffRows) => {
             if (tErr) return res.status(500).json({ error: tErr.message });
 
-            const tariffs = (tariffRows || []).map(t => ({
+            let tariffs = (tariffRows || []).map(t => ({
                 validFrom: t.valid_from,
                 costPerKwh: t.cost_per_kwh,
                 feedInTariff: t.feed_in_tariff
             }));
 
             if (tariffs.length === 0) {
-                return res.status(400).json({ error: "No tariffs configured" });
+                // Be resilient: if the DB tariff table is empty (e.g., first run or initialization race),
+                // fall back to config defaults so comparisons still work.
+                tariffs = [{
+                    validFrom: '2000-01-01',
+                    costPerKwh: (typeof config.costPerKwh === 'number' && Number.isFinite(config.costPerKwh)) ? config.costPerKwh : 0.30,
+                    feedInTariff: (typeof config.feedInTariff === 'number' && Number.isFinite(config.feedInTariff)) ? config.feedInTariff : 0.08,
+                }];
             }
 
             getHourlyGridEnergyKwh(startTs, endTs, (eErr, hours) => {

@@ -5,17 +5,22 @@ The bundled upstream Sunflow app has its own release/versioning.
 
 Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
+## 0.1.9
+
+- Integration: add battery charge/discharge power sensors (and signed battery power) derived from `power.battery`.
+- Add-on/backend: make aWATTar compare resilient when the tariffs table is temporarily empty (fallback to config defaults instead of returning HTTP 400).
+
 ## 0.1.8
 
 - Integration: fix missing entities by retrying setup when the add-on is temporarily unreachable and by making entity unique IDs per config entry.
 
-## 0.1.6
-
-- Fix settings save failing with HTTP 404 under Home Assistant Ingress by deriving the correct ingress base path for API calls.
-
 ## 0.1.7
 
 - Integration: improve "Use local add-on" auto-connect by trying multiple Supervisor/Docker hostname patterns (fixes "Failed to connect to Sunflow" on some HA installs).
+
+## 0.1.6
+
+- Fix settings save failing with HTTP 404 under Home Assistant Ingress by deriving the correct ingress base path for API calls.
 
 ## 0.1.5
 
