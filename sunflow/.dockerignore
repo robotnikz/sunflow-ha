@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+**/dist
+**/data
+**/sunflow-data
+**/sunflow-data-ci-local
+**/.venv
+**/test-results
+.git

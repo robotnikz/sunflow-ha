@@ -1,0 +1,37 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Sunflow",
+        "menu_options": {
+          "local_addon": "Use local Home Assistant add-on",
+          "manual": "Enter a URL manually"
+        }
+      },
+      "local_addon": {
+        "title": "Use local add-on",
+        "description": "Automatically connect to the Sunflow add-on installed in Home Assistant.",
+        "data": {
+          "admin_token": "Admin token (optional)",
+          "name": "Name"
+        }
+      },
+      "manual": {
+        "title": "Manual URL",
+        "description": "Enter the base URL of your Sunflow server (e.g. http://homeassistant.local:3000).",
+        "data": {
+          "base_url": "Base URL",
+          "admin_token": "Admin token (optional)",
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Sunflow.",
+      "addon_not_found": "Sunflow add-on not found in Supervisor. Install/start the add-on first."
+    },
+    "abort": {
+      "already_configured": "This Sunflow instance is already configured."
+    }
+  }
+}

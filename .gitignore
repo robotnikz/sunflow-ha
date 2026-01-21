@@ -1,0 +1,21 @@
+# Node
+**/node_modules/
+**/dist/
+
+# Sunflow runtime data
+**/data/
+**/sunflow-data/
+**/sunflow-data-ci-local/
+**/uploads/
+**/solar_data.db
+
+# Python/venv (accidental)
+**/.venv/
+
+# Test artifacts
+**/test-results/
+**/.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

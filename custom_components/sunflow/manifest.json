@@ -1,0 +1,12 @@
+{
+  "domain": "sunflow",
+  "name": "Sunflow",
+  "version": "0.1.0",
+  "documentation": "https://github.com/robotnikz/sunflow-ha",
+  "issue_tracker": "https://github.com/robotnikz/sunflow-ha/issues",
+  "dependencies": [],
+  "codeowners": ["@robotnikz"],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "requirements": []
+}

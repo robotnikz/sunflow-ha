@@ -1,0 +1,10 @@
+configuration:
+  log_level:
+    name: Log level
+    description: Controls how much the add-on logs.
+  admin_token:
+    name: Admin token
+    description: Optional. If set, Sunflow requires this bearer token for write/admin endpoints.
+  cors_origin:
+    name: CORS origin
+    description: Optional. Set allowed origin(s) for CORS if you access Sunflow outside Ingress.

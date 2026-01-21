@@ -1,0 +1,43 @@
+name: Sunflow
+slug: sunflow
+version: "0.1.0"
+description: "Sunflow Dashboard (Solar Energy)"
+url: "https://github.com/robotnikz/sunflow-ha"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+startup: services
+boot: auto
+init: false
+# Ingress shows the UI inside Home Assistant.
+ingress: true
+ingress_port: 3000
+ingress_entry: /
+panel_icon: mdi:solar-power
+
+# If you want to optionally expose a host port, you can add it later.
+# For MVP, keep it internal/ingress-only.
+ports: {}
+ports_description: {}
+
+# Persist add-on data. Home Assistant will mount /data.
+map:
+  - data:rw
+
+# Optional: allow users to set an admin token for write/admin endpoints.
+options:
+  log_level: info
+  admin_token: ""
+  cors_origin: ""
+schema:
+  log_level: list(trace|debug|info|warning|error)
+  admin_token: str?
+  cors_origin: str?
+
+environment:
+  NODE_ENV: production
+  DATA_DIR: /data
+  TRUST_PROXY: "true"
+
+# Pass options to env via run.sh.

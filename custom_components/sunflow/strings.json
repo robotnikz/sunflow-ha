@@ -1,0 +1,7 @@
+{
+  "domain": "sunflow",
+  "name": "Sunflow",
+  "config_flow": true,
+  "documentation": "https://github.com/robotnikz/sunflow-ha",
+  "issue_tracker": "https://github.com/robotnikz/sunflow-ha/issues"
+}
