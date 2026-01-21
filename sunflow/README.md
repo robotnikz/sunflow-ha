@@ -7,6 +7,8 @@ Upstream Sunflow (main app):
 
 - https://github.com/robotnikz/Sunflow
 
+The upstream repository also documents the **standalone Docker** deployment (running Sunflow outside of Home Assistant).
+
 This add-on bundles the full Sunflow app (frontend + backend) and runs as a **standalone** service inside Home Assistant.
 The Home Assistant integration in this repository is optional.
 

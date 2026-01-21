@@ -70,7 +70,9 @@ They will be applied automatically by `scripts/sync_upstream.sh` after the upstr
 Recommended approach:
 
 1. Make the HA-only change on a branch.
-2. Create a patch file from the diff:
-   - `git diff -- sunflow/sunflow > patches/0001-ha-overrides.patch`
+2. Regenerate the patch deterministically from the *committed* vendored tree:
+  - `bash scripts/regenerate_patch.sh`
 3. Keep the patch small and focused.
+
+Note: avoid generating patch files from a Windows working tree diff, because CRLF line endings can break `git apply` on Linux CI.
 

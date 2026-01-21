@@ -32,6 +32,9 @@ Suggested scopes:
 
 You can preview what semantic-release would do locally:
 
-- `npx -y -p semantic-release@25 -p @semantic-release/commit-analyzer@13 -p @semantic-release/release-notes-generator@14 semantic-release --dry-run -e ./release.config.cjs`
+- Prerequisite: Node.js >= 22.14 (semantic-release v25 requirement)
+- From repo root:
+   - `npm ci`
+   - `npx semantic-release --dry-run -e ./release.config.cjs`
 
 (Real releases are intended to be done by CI.)

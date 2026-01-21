@@ -1,7 +1,7 @@
-﻿diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/dependabot.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/dependabot.yml"
+diff --git a/sunflow/sunflow/.github/dependabot.yml b/sunflow/sunflow/.github/dependabot.yml
 deleted file mode 100644
 index 411b139..0000000
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/dependabot.yml"
+--- a/sunflow/sunflow/.github/dependabot.yml
 +++ /dev/null
 @@ -1,22 +0,0 @@
 -version: 2
@@ -26,10 +26,10 @@ index 411b139..0000000
 -    schedule:
 -      interval: "weekly"
 -    open-pull-requests-limit: 5
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/codeql.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/codeql.yml"
+diff --git a/sunflow/sunflow/.github/workflows/codeql.yml b/sunflow/sunflow/.github/workflows/codeql.yml
 deleted file mode 100644
 index 88fc60c..0000000
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/codeql.yml"
+--- a/sunflow/sunflow/.github/workflows/codeql.yml
 +++ /dev/null
 @@ -1,51 +0,0 @@
 -name: CodeQL
@@ -83,10 +83,10 @@ index 88fc60c..0000000
 -
 -      - name: Perform CodeQL Analysis
 -        uses: github/codeql-action/analyze@v4
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/docker-publish.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/docker-publish.yml"
+diff --git a/sunflow/sunflow/.github/workflows/docker-publish.yml b/sunflow/sunflow/.github/workflows/docker-publish.yml
 deleted file mode 100644
 index 67f577e..0000000
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/docker-publish.yml"
+--- a/sunflow/sunflow/.github/workflows/docker-publish.yml
 +++ /dev/null
 @@ -1,142 +0,0 @@
 -name: CI/CD Pipeline
@@ -231,10 +231,10 @@ index 67f577e..0000000
 -          push: true
 -          tags: ${{ steps.meta.outputs.tags }}
 -          labels: ${{ steps.meta.outputs.labels }}
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/retag-latest.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/retag-latest.yml"
+diff --git a/sunflow/sunflow/.github/workflows/retag-latest.yml b/sunflow/sunflow/.github/workflows/retag-latest.yml
 deleted file mode 100644
 index 72249f9..0000000
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/retag-latest.yml"
+--- a/sunflow/sunflow/.github/workflows/retag-latest.yml
 +++ /dev/null
 @@ -1,70 +0,0 @@
 -name: Retag GHCR latest
@@ -307,10 +307,132 @@ index 72249f9..0000000
 -
 -      - name: Verify latest
 -        run: docker buildx imagetools inspect "$TARGET_IMAGE"
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/App.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/App.tsx"
+diff --git a/sunflow/sunflow/AUDIT.md b/sunflow/sunflow/AUDIT.md
+deleted file mode 100644
+index ad54478..0000000
+--- a/sunflow/sunflow/AUDIT.md
++++ /dev/null
+@@ -1,116 +0,0 @@
+-# SunFlow Audit (Architecture, Security, Hardening)
+-
+-Date: 2026-01-15
+-Branch: `audit-2026-01-15-security-hardening`
+-
+-## Architecture (as implemented)
+-
+-- Single-container “monolith”: React/Vite static frontend served from the same Express backend.
+-- Persistent state stored in SQLite under `/app/data` (mounted data directory in Docker Compose; bind-mounted by default).
+-- Background jobs:
+-  - 1-minute inverter polling
+-  - hourly retention/aggregation job
+-- External integrations:
+-  - Fronius Solar API via HTTP to a user-configured `inverterIp`
+-  - Solcast API via HTTPS using user-provided API key
+-  - Discord notifications via webhook
+-  - GitHub Releases check via GitHub API
+-
+-## Threat model assumptions
+-
+-This project is typically run on a home LAN/NAS/Raspberry Pi. If the service is exposed to the public internet without authentication, an attacker can:
+-
+-- read/modify configuration
+-- trigger network requests (SSRF) via webhook/test endpoints and potentially via inverter host
+-- upload CSV files to influence/overwrite stored history
+-
+-Because of that, the safest stance is: **do not expose SunFlow to the internet without a reverse proxy + auth**.
+-
+-## High-impact findings (summary)
+-
+-### 1) Missing auth on write/admin endpoints
+-- Risk: anyone who can reach the port can change settings, import data, and potentially trigger network actions.
+-- Fix added: optional Bearer token protection for write/admin routes (`SUNFLOW_ADMIN_TOKEN`).
+-
+-### 2) SSRF via Discord webhook handling
+-- Risk: `/api/test-notification` could be used to POST to arbitrary URLs if reachable.
+-- Fix added: webhook allowlist (HTTPS + Discord webhook host + `/api/webhooks/…`).
+-
+-### 3) Overly-permissive CORS
+-- Risk: in a browser context, any site could call the API if user visits a malicious webpage, as long as the service is reachable.
+-- Fix added: secure-by-default CORS (prod requires explicit allowlist via `CORS_ORIGIN`; dev allows localhost:5173).
+-
+-### 4) Unbounded CSV upload / parsing
+-- Risk: memory/CPU DoS with large uploads; JSON parsing exceptions could leak temp files.
+-- Fix added: Multer upload limits + safer parsing and cleanup.
+-
+-### 5) Docker hardening
+-- Risk: running as root and using non-LTS Node image increases blast radius and operational risk.
+-- Fix added: switch to Node 22 LTS image, run as non-root, add healthcheck.
+-
+-## Changes implemented in this branch
+-
+-- Server hardening (see `server.js`):
+-  - `x-powered-by` disabled
+-  - optional `TRUST_PROXY`
+-  - CORS allowlist behavior
+-  - optional admin Bearer token on write routes
+-  - secret redaction in `/api/config` when admin token is set
+-  - Discord webhook allowlist
+-  - inverter host sanitization
+-  - upload limits and robust cleanup
+-  - fixed a runtime issue in `/api/forecast` outside daylight window
+-
+-- Container hardening (see `Dockerfile`):
+-  - Node 22 LTS
+-  - reproducible installs via lockfile
+-  - non-root execution (`USER node`)
+-  - healthcheck to `/api/info`
+-
+-## Recommended deployment hardening (Compose)
+-
+-Example additions to `docker-compose.yml`:
+-
+-```yaml
+-services:
+-  sunflow:
+-    # If you use a reverse proxy in front, set TRUST_PROXY
+-    environment:
+-      - TRUST_PROXY=1
+-      # Optional: protect admin/write endpoints
+-      # - SUNFLOW_ADMIN_TOKEN=change-me-long-random
+-      # If you run the UI from another origin:
+-      # - CORS_ORIGIN=https://your-domain.example
+-
+-    # Container hardening (verify compatibility in your setup)
+-    read_only: true
+-    tmpfs:
+-      - /tmp
+-    security_opt:
+-      - no-new-privileges:true
+-    cap_drop:
+-      - ALL
+-```
+-
+-Notes:
+-- `read_only: true` requires that all writes happen under the mounted `/app/data` volume and temp files use `/tmp` (tmpfs).
+-- If you expose the service beyond your LAN, put it behind a reverse proxy with TLS and authentication.
+-
+-## Operational recommendations
+-
+-- Prefer pinning images by version tag or digest in Compose (avoid `:latest` for predictable rollbacks).
+-- Keep secrets out of config responses when possible; if you set `SUNFLOW_ADMIN_TOKEN`, secrets are redacted for non-admin requests.
+-
+-See also:
+-- Practical self-hosting checklist: `SECURITY_CHECKLIST.md`
+-- Day-2 operations runbook: `OPERATIONS.md`
+-
+-## Env var reference (added/used)
+-
+-- `SUNFLOW_ADMIN_TOKEN`: if set, write/admin routes require `Authorization: Bearer <token>`.
+-- `SUNFLOW_PROTECT_SECRETS`: default `true` when `SUNFLOW_ADMIN_TOKEN` is set; set to `false` to disable redaction.
+-- `CORS_ORIGIN` / `SUNFLOW_CORS_ORIGIN`: comma-separated allowlist for browsers.
+-- `CORS_DISABLED` / `SUNFLOW_CORS_DISABLED`: set to `true` to disable CORS middleware entirely.
+-- `TRUST_PROXY`: set to `1`/`true` when behind a reverse proxy.
+-- `UPLOAD_MAX_BYTES`: CSV upload max size (default 15MB).
+-- `JSON_BODY_LIMIT`: JSON body size limit (default `1mb`).
+diff --git a/sunflow/sunflow/App.tsx b/sunflow/sunflow/App.tsx
 index b8e4039..b23d460 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/App.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/App.tsx"
+--- a/sunflow/sunflow/App.tsx
++++ b/sunflow/sunflow/App.tsx
 @@ -87,7 +87,8 @@ const App: React.FC = () => {
        setRefreshTrigger(prev => prev + 1);
      } catch (e) {
@@ -321,10 +443,358 @@ index b8e4039..b23d460 100644
      }
    };
  
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CONTRIBUTING.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/CONTRIBUTING.md"
+diff --git a/sunflow/sunflow/CHANGELOG.md b/sunflow/sunflow/CHANGELOG.md
+deleted file mode 100644
+index 9266ad5..0000000
+--- a/sunflow/sunflow/CHANGELOG.md
++++ /dev/null
+@@ -1,342 +0,0 @@
+-## [1.11.1](https://github.com/robotnikz/Sunflow/compare/v1.11.0...v1.11.1) (2026-01-16)
+-
+-
+-### Bug Fixes
+-
+-* constrain uploaded file paths ([146fe61](https://github.com/robotnikz/Sunflow/commit/146fe61d5267adcfe84c1598854d63e240c98e53))
+-* dedupe /api/energy overlaps ([db7cfbb](https://github.com/robotnikz/Sunflow/commit/db7cfbbd9098c6705d5456e9486171512cfb2095))
+-* dedupe /api/history overlaps ([8da489f](https://github.com/robotnikz/Sunflow/commit/8da489f24702bc0becbf05ef74987cc148811e33))
+-* **docker:** handle readonly DB permissions ([5151b54](https://github.com/robotnikz/Sunflow/commit/5151b54b066b2d3e7ab40239ff4222cf8e812da1))
+-* **docker:** make /app/data writable out-of-box ([19e17ff](https://github.com/robotnikz/Sunflow/commit/19e17fff32822b651fee9c75ffd06abb82dc4d7c))
+-* sanitize upload temp file paths ([9517666](https://github.com/robotnikz/Sunflow/commit/9517666de3f2421aaa08f2b29e41f99d985248fb))
+-* **ui:** close settings modal on Escape ([165f2ef](https://github.com/robotnikz/Sunflow/commit/165f2ef46cd3f8c4fe276e8af56bb45d514e0f6a))
+-* validate csv import mapping ([d889e7f](https://github.com/robotnikz/Sunflow/commit/d889e7f3469ea40816c7fe681766d0a8c00272bd))
+-
+-# [1.11.0](https://github.com/robotnikz/Sunflow/compare/v1.10.1...v1.11.0) (2026-01-15)
+-
+-
+-### Features
+-
+-* trigger 1.11.0 release ([b2531d1](https://github.com/robotnikz/Sunflow/commit/b2531d106fdb0e81e0b045a8ec70003fac59e62b))
+-
+-## [1.10.1](https://github.com/robotnikz/Sunflow/compare/v1.10.0...v1.10.1) (2026-01-15)
+-
+-
+-### Bug Fixes
+-
+-* **smart-usage:** respect reserve SOC in smart usage and notifications ([db3409d](https://github.com/robotnikz/Sunflow/commit/db3409dccc9a7248f525fd4f70ace32be7e6dba8))
+-* **smart-usage:** use real sunrise/sunset boundaries ([542ec5d](https://github.com/robotnikz/Sunflow/commit/542ec5d84ad77e19c5b9afa6477a3dd0eb2435ed))
+-
+-# [1.10.0](https://github.com/robotnikz/Sunflow/compare/v1.9.3...v1.10.0) (2026-01-15)
+-
+-
+-### Bug Fixes
+-
+-* **smart-recommendations:** show per-run cost and battery equivalent ([df77e51](https://github.com/robotnikz/Sunflow/commit/df77e513c4841bfb06d58dc567abab79b2223e70))
+-
+-
+-### Features
+-
+-* **appliances:** allow kWh-per-run or watts+duration ([f361103](https://github.com/robotnikz/Sunflow/commit/f361103ca3441a42d4732eb748bfdc4dd5c94a9d))
+-
+-## [1.9.3](https://github.com/robotnikz/Sunflow/compare/v1.9.2...v1.9.3) (2026-01-15)
+-
+-
+-### Bug Fixes
+-
+-* **scenario-planner:** align baseline with measured flows ([0fa93f7](https://github.com/robotnikz/Sunflow/commit/0fa93f7923ee79b466b3ff17947aab471e816c04))
+-* **scenario-planner:** avoid misleading battery suggestion ([9372a23](https://github.com/robotnikz/Sunflow/commit/9372a231263864397bbec6d31b8f173e137c2390))
+-
+-## [1.9.2](https://github.com/robotnikz/Sunflow/compare/v1.9.1...v1.9.2) (2026-01-15)
+-
+-
+-### Bug Fixes
+-
+-* **scenario-planner:** account for PV/battery dependency ([11f25e6](https://github.com/robotnikz/Sunflow/commit/11f25e643468e3578977670a2a6c8151e0cae18d))
+-
+-## [1.9.1](https://github.com/robotnikz/Sunflow/compare/v1.9.0...v1.9.1) (2026-01-13)
+-
+-
+-### Bug Fixes
+-
+-* **ui:** simplify awattar compare inputs ([7e76f42](https://github.com/robotnikz/Sunflow/commit/7e76f42f9fc5b34ec75cea216ed2c069eef8b76c))
+-
+-# [1.9.0](https://github.com/robotnikz/Sunflow/compare/v1.8.0...v1.9.0) (2026-01-13)
+-
+-
+-### Features
+-
+-* **dashboard:** add aWATTar dynamic tariff comparison ([7a2f279](https://github.com/robotnikz/Sunflow/commit/7a2f27955aeeebd05a8b75e24c03fa001989b81c))
+-
+-# [1.8.0](https://github.com/robotnikz/Sunflow/compare/v1.7.0...v1.8.0) (2026-01-13)
+-
+-
+-### Features
+-
+-* **tariffs:** compare fixed vs aWATTar prices ([f9121f9](https://github.com/robotnikz/Sunflow/commit/f9121f954f570d4428bfda3c1d3f8c0af2fa6e65))
+-
+-# [1.7.0](https://github.com/robotnikz/Sunflow/compare/v1.6.0...v1.7.0) (2026-01-12)
+-
+-
+-### Features
+-
+-* **scenario-planner:** add timeframe selector and baseline autonomy ([93c20ad](https://github.com/robotnikz/Sunflow/commit/93c20ada4ab7f8f617386633326ebb3a28c71459))
+-
+-# [1.6.0](https://github.com/robotnikz/Sunflow/compare/v1.5.0...v1.6.0) (2026-01-11)
+-
+-
+-### Bug Fixes
+-
+-* **tests:** resolve typescript errors in test suite ([ffb5e89](https://github.com/robotnikz/Sunflow/commit/ffb5e89a5dd77d71b62aa9c69828d41f3b677c5f))
+-
+-
+-### Features
+-
+-* **core:** enhance ROI accuracy, server performance and test coverage ([c19a480](https://github.com/robotnikz/Sunflow/commit/c19a480c43a5cc848a54b5953232d7f32274679c))
+-
+-# [1.5.0](https://github.com/robotnikz/Sunflow/compare/v1.4.0...v1.5.0) (2026-01-11)
+-
+-
+-### Bug Fixes
+-
+-* **settings:** import missing getConfig in SettingsModal ([35c14c6](https://github.com/robotnikz/Sunflow/commit/35c14c6287fdb632be2cca1b625a4373200d068c))
+-
+-
+-### Features
+-
+-* enhance history visualization, csv imports, and ROI simulation accuracy ([61e2194](https://github.com/robotnikz/Sunflow/commit/61e21947b67206a529ec664c5cc1cdd0d87d7881))
+-
+-# [1.4.0](https://github.com/robotnikz/Sunflow/compare/v1.3.6...v1.4.0) (2026-01-11)
+-
+-
+-### Features
+-
+-* history graphs now show the current day, week, etc. Also added an option to go back in time on the graphs. ([857c5a4](https://github.com/robotnikz/Sunflow/commit/857c5a4082ed887b21fc485569dce74f1386d300))
+-
+-## [1.3.6](https://github.com/robotnikz/Sunflow/compare/v1.3.5...v1.3.6) (2026-01-11)
+-
+-
+-### Bug Fixes
+-
+-* trigger release ([42f48dd](https://github.com/robotnikz/Sunflow/commit/42f48dd916d4757e58f0aa39c5c31d2d4120e6a6))
+-
+-## [1.3.5](https://github.com/robotnikz/Sunflow/compare/v1.3.4...v1.3.5) (2026-01-10)
+-
+-
+-### Bug Fixes
+-
+-* added possible to enter mixed tariffs with different earnings. e.g up to 10kw and >10kw ([20ae93b](https://github.com/robotnikz/Sunflow/commit/20ae93baa74ff06d9cfea8ac471704adbc4fb8ea))
+-* latest commit ([dffad23](https://github.com/robotnikz/Sunflow/commit/dffad233a53fe9addb005e33e2ab250cbe638720))
+-
+-## [1.3.4](https://github.com/robotnikz/Sunflow/compare/v1.3.3...v1.3.4) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* battery widget charging animation changed from radar animation to a slight pulse ([7efcee1](https://github.com/robotnikz/Sunflow/commit/7efcee186cc3fe23e32dbed59a4cc950338debb3))
+-
+-## [1.3.3](https://github.com/robotnikz/Sunflow/compare/v1.3.2...v1.3.3) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* changed Dockerfile to Debian:slim ([60f87e3](https://github.com/robotnikz/Sunflow/commit/60f87e3f0759c0851935831483576da7f225ec01))
+-
+-## [1.3.2](https://github.com/robotnikz/Sunflow/compare/v1.3.1...v1.3.2) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* smart recommendation backend logic fixed for notifications ([77614f1](https://github.com/robotnikz/Sunflow/commit/77614f17721c5ebfd28d5b389a5a9250374332e5))
+-
+-## [1.3.1](https://github.com/robotnikz/Sunflow/compare/v1.3.0...v1.3.1) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* **tests:** Resolve test suite failures and warnings ([7cb00c1](https://github.com/robotnikz/Sunflow/commit/7cb00c12ea06bdaa276914b58bdc399c9300565e))
+-
+-# [1.3.0](https://github.com/robotnikz/Sunflow/compare/v1.2.1...v1.3.0) (2026-01-09)
+-
+-
+-### Features
+-
+-* added Battery Health widget and also notification option for Battery Health. You can define a threshold and amount of cycles before notified when battery health is low ([a95e40b](https://github.com/robotnikz/Sunflow/commit/a95e40b7131af2395b34573ac2f0709f2b350d76))
+-
+-## [1.2.1](https://github.com/robotnikz/Sunflow/compare/v1.2.0...v1.2.1) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* refactoring ([81e5ff9](https://github.com/robotnikz/Sunflow/commit/81e5ff9444cb60ecf8d4ffebe07df1f5b6e50abb))
+-
+-# [1.2.0](https://github.com/robotnikz/Sunflow/compare/v1.1.0...v1.2.0) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* fixed blurry fonts in history graphs ([a641396](https://github.com/robotnikz/Sunflow/commit/a641396b0ff694ea1e9fc0434690a004c757b1ec))
+-* fixed forecast logic. ([f76399a](https://github.com/robotnikz/Sunflow/commit/f76399ab5e50d0d2cd2f70bd4b1ab14839088a00))
+-* fixed some optical glitches in settings panel ([6714a8b](https://github.com/robotnikz/Sunflow/commit/6714a8b27dfa33bf9c9ba4a98856f0992b3f1e46))
+-* fixed some widget bugs ([78bc499](https://github.com/robotnikz/Sunflow/commit/78bc499546b95180bb1ac0c0c142c94e804340d2))
+-
+-
+-### Features
+-
+-* added option for discord notifications ([7d1cabd](https://github.com/robotnikz/Sunflow/commit/7d1cabd279c4dfbaf860dd50769e40dfad6770f3))
+-
+-# [1.1.0](https://github.com/robotnikz/Sunflow/compare/v1.0.3...v1.1.0) (2026-01-09)
+-
+-
+-### Bug Fixes
+-
+-* added SOC charging to power history ([b023096](https://github.com/robotnikz/Sunflow/commit/b023096879c53aab9f23d4db5d659f6c91efc9b8))
+-* battery charging/discharging in live power view ([d45106e](https://github.com/robotnikz/Sunflow/commit/d45106ed2a6b8704a95dc88a243c17ca7f745324))
+-* fixed energy donuts visuals ([7f1ab17](https://github.com/robotnikz/Sunflow/commit/7f1ab17df6dbe4b1f0f80fd1f12fe4be189a6003))
+-* improved break even calculation, added invested to date and estimated total cost at break even ([711d8c4](https://github.com/robotnikz/Sunflow/commit/711d8c44747fcc509c078ccb5fa6c65142339db0))
+-* improved smart use logic, fallback to open-meteo for pv forecast in case solcast settings are missing or api limit reached. ([e8e232b](https://github.com/robotnikz/Sunflow/commit/e8e232b479f5eb7c3de70ebf1fafbe60d537f7e8))
+-
+-
+-### Features
+-
+-* added option to export data as .csv ([ab9dc4b](https://github.com/robotnikz/Sunflow/commit/ab9dc4bf195a763f001d9342c55dee60b7e2b3f6))
+-* added smart usage predictions, battery min 30% + rough >1h forecast to determine best usage time for your devices (testing stage) ([3e298fa](https://github.com/robotnikz/Sunflow/commit/3e298fa6c02c4f5675888cb37cadb046bba4a11f))
+-* added solcast API in settings for forecast used in smart predictions ([de44743](https://github.com/robotnikz/Sunflow/commit/de44743f011d12351ba56afb6c9dbb5dc1cb4e58))
+-
+-## [1.0.3](https://github.com/robotnikz/Sunflow/compare/v1.0.2...v1.0.3) (2026-01-08)
+-
+-
+-### Bug Fixes
+-
+-* delete buttons not working in settings ([c9887bf](https://github.com/robotnikz/Sunflow/commit/c9887bfd5dc1665f243dabf343472130b52ffc7b))
+-
+-## [1.0.2](https://github.com/robotnikz/Sunflow/compare/v1.0.1...v1.0.2) (2026-01-08)
+-
+-
+-### Bug Fixes
+-
+-* fixed bugged hindering container to start ([5cdb37e](https://github.com/robotnikz/Sunflow/commit/5cdb37e1b7ca6790e8ed9ab827ae5e024b665e1e))
+-
+-## [1.0.1](https://github.com/robotnikz/Sunflow/compare/v1.0.0...v1.0.1) (2026-01-08)
+-
+-
+-### Bug Fixes
+-
+-* fixed a bug where tarrifs could not be deleted ([e9451ca](https://github.com/robotnikz/Sunflow/commit/e9451ca4689b83611e692118a8f74a1df727cee6))
+-
+-# 1.0.0 (2026-01-08)
+-
+-
+-### Bug Fixes
+-
+-* Adjust chart margins and spacing for better readability ([d92df61](https://github.com/robotnikz/Sunflow/commit/d92df6171dc68c1f1378396820799198fa1d7586))
+-* **dashboard:** Adjust layout for better power flow display ([d55dbe9](https://github.com/robotnikz/Sunflow/commit/d55dbe9b87224dd8b5a1f50b003ad9fb05fc16e5))
+-* **db:** Improve migration for status_code column ([72d2aff](https://github.com/robotnikz/Sunflow/commit/72d2affbf80ea4630b7c2391636210946deaf151))
+-* docker ([1870bd2](https://github.com/robotnikz/Sunflow/commit/1870bd2b9544edae4e94137c666e7d74bf08d60e))
+-* docker build ([42399b3](https://github.com/robotnikz/Sunflow/commit/42399b33d9f7032f1eee283540a3560ed2c2f7cc))
+-* Dockerfile ([45d77ed](https://github.com/robotnikz/Sunflow/commit/45d77ed33d8406e1f29b763df25a8c295f557d7e))
+-* Improve financial forecast calculation ([4793231](https://github.com/robotnikz/Sunflow/commit/4793231eab2427dfa1178704f65f8b414885794e))
+-* **settings:** Improve financial return input styling ([13a61bd](https://github.com/robotnikz/Sunflow/commit/13a61bdf8e42de151eee19ce594f84412abeaaeb))
+-* **SettingsModal:** Improve financial return input styling ([958fc84](https://github.com/robotnikz/Sunflow/commit/958fc84e2e71cfd6f8191ffd4dd128349d51604e))
+-
+-
+-### Features
+-
+-* Add battery and efficiency charts ([3de494f](https://github.com/robotnikz/Sunflow/commit/3de494f4ba0f3a251288826cecb9240c4d604bed))
+-* Add custom date range for history ([1dd3e1f](https://github.com/robotnikz/Sunflow/commit/1dd3e1fedd5bbbdfed2141576ededbdb5e1c360e))
+-* Add degradation and inflation rates to config ([2f41c84](https://github.com/robotnikz/Sunflow/commit/2f41c848c2707a521673c62d6dd1758a7693d7d5))
+-* Add hourly time range and database index ([818aa92](https://github.com/robotnikz/Sunflow/commit/818aa921aa0f5a9eb23bf6ec643021da58fd79d8))
+-* Add initial values for historical data ([9991261](https://github.com/robotnikz/Sunflow/commit/99912610246e4d767e97eb2c66230ccbad5f9a85))
+-* Add inverter status to history and display timeline ([614c38c](https://github.com/robotnikz/Sunflow/commit/614c38ccfc78a72eb0802d2bd8127feb49c7a7f1))
+-* Add local timestamps and animations ([e4579af](https://github.com/robotnikz/Sunflow/commit/e4579afaa3b98b14de5740b32d8e63423736d63b))
+-* Add location and weather support ([cda3a0c](https://github.com/robotnikz/Sunflow/commit/cda3a0cc7772af1654641c4f9c28c9b6a1f63ad2))
+-* Add real-time autonomy and self-consumption metrics ([74c59f5](https://github.com/robotnikz/Sunflow/commit/74c59f5987327696af4f47fc4fd1c34f3e974b41))
+-* Add system info and update checks ([fdcfd66](https://github.com/robotnikz/Sunflow/commit/fdcfd6617af0614f74389e125e135609ae4f995f))
+-* Adjust component heights for better layout ([8927897](https://github.com/robotnikz/Sunflow/commit/89278979d91998260d522f59026aa9afa265fc7e))
+-* **AmortizationWidget:** Improve break-even estimation ([cf9c5cc](https://github.com/robotnikz/Sunflow/commit/cf9c5cc67f75732d00f7d6fb45ce41bc0279984c))
+-* Auto-refresh ROI data every minute ([7b5d1f8](https://github.com/robotnikz/Sunflow/commit/7b5d1f898d5ff783dd96828fb3054ace9e8e6edb))
+-* Configure persistent data directory ([c6f467f](https://github.com/robotnikz/Sunflow/commit/c6f467f389c82b72fa8f6afa44fe5791d5ef1094))
+-* Configure Vite for development server proxy ([16177d3](https://github.com/robotnikz/Sunflow/commit/16177d385b4b0d7365ac711d7171d2e04c9d99ac))
+-* **dashboard:** Enhance stats and add CO2 calculation ([853ecb1](https://github.com/robotnikz/Sunflow/commit/853ecb1865c0eceee4c08b4d4161b8d711280cfe))
+-* Display grid power flow in UI and data ([115ba07](https://github.com/robotnikz/Sunflow/commit/115ba07de4abca3437dd855fa82697a95d87104c))
+-* Enhance financial calculations and UI ([1c1adb9](https://github.com/robotnikz/Sunflow/commit/1c1adb9b29d9a3deb5b7852d123610c26e42008b))
+-* Enhance UI with custom font and layout adjustments ([e8c6ee9](https://github.com/robotnikz/Sunflow/commit/e8c6ee9d3011052a9d0ee4ccbca846bf06a66ab9))
+-* Implement expense tracking for ROI calculation ([8e324c8](https://github.com/robotnikz/Sunflow/commit/8e324c8547870bb8a7e4b02aa893ae449267f19b))
+-* Implement real-time energy history and stats ([625efb6](https://github.com/robotnikz/Sunflow/commit/625efb6a71d1eb06e3a9edb1601f0a2e3291ddf8))
+-* Improve dashboard layout and chart aesthetics ([fcbb919](https://github.com/robotnikz/Sunflow/commit/fcbb919ee6f971e16816c5b2f1e365e22779020c))
+-* Improve dashboard layout and sectioning ([c4f07eb](https://github.com/robotnikz/Sunflow/commit/c4f07eb356018d1514503ffce3b6fce039bd4ac8))
+-* Improve Docker build and UI elements ([02f7929](https://github.com/robotnikz/Sunflow/commit/02f79295e71a3fee410aaea1b600a8fe96ab6c00))
+-* Improve energy data aggregation ([235faad](https://github.com/robotnikz/Sunflow/commit/235faadc4a9c283481aab37c7d57ba107dc8a019))
+-* Improve number input styling in settings ([3a1ef64](https://github.com/robotnikz/Sunflow/commit/3a1ef64adc89a7dca94b220d1ae24d87a7c3aff5))
+-* Improve UI element spacing and layout ([3f6f425](https://github.com/robotnikz/Sunflow/commit/3f6f425b086d5883f88d9efcfd484a2d57b2a9a0))
+-* Improve widget text styling ([d971060](https://github.com/robotnikz/Sunflow/commit/d971060aa5eb5f10cedd8989aeb2add8dd94bea5))
+-* Initialize SolarSense Dashboard project ([5961265](https://github.com/robotnikz/Sunflow/commit/596126547dd786a53a19e46027c562f0237afef8))
+-* Introduce dashboard refresh mechanism ([c469464](https://github.com/robotnikz/Sunflow/commit/c469464403396e9bcddfad4ed743c9dded5302ce))
+-* Introduce dynamic tariff management ([19fbc30](https://github.com/robotnikz/Sunflow/commit/19fbc30435441a1ee9a700591b327a269b1202f0))
+-* Introduce visual BatteryWidget ([de9f0d1](https://github.com/robotnikz/Sunflow/commit/de9f0d1c130fd97c02a9f48e7938d0d28eaa305e))
+-* Migrate backend to ES Modules and add dependencies ([be88ab0](https://github.com/robotnikz/Sunflow/commit/be88ab0336151ebe36a2111165b4cc729292a921))
+-* **powerflow:** Improve visual flow and layout ([942c19d](https://github.com/robotnikz/Sunflow/commit/942c19da0ddbfe675005ec95ee75edfa659881de))
+-* Refactor PowerFlow component layout ([d8deb6c](https://github.com/robotnikz/Sunflow/commit/d8deb6c2c4b202480f674973189d08c3659d5d2c))
+-* **server:** Calculate yearly recurring costs ([09bb6a4](https://github.com/robotnikz/Sunflow/commit/09bb6a448fb59c6afa37dab77514245a001f64bf))
+-* **settings:** Add calibration tab and improve UI ([dc276d2](https://github.com/robotnikz/Sunflow/commit/dc276d28f4e4f84c98845137fdc0da98a5c5fa01))
+-* **settings:** Improve historical data input guidance ([b6ab194](https://github.com/robotnikz/Sunflow/commit/b6ab19454f2807fe9cbe9e537be22334ea214626))
+-* **StatusTimeline:** Simplify component logic and props ([b19aa13](https://github.com/robotnikz/Sunflow/commit/b19aa13a1d56823ddc08186ae44ce427e90bfd18))
+-* Update module imports and Vite proxy configuration ([73284f3](https://github.com/robotnikz/Sunflow/commit/73284f3f4aff876c57e57bb1181c1894d2412482))
+-
+-# 1.0.0 (2026-01-08)
+-
+-
+-### Bug Fixes
+-
+-* Adjust chart margins and spacing for better readability ([d92df61](https://github.com/robotnikz/Sunflow/commit/d92df6171dc68c1f1378396820799198fa1d7586))
+-* **dashboard:** Adjust layout for better power flow display ([d55dbe9](https://github.com/robotnikz/Sunflow/commit/d55dbe9b87224dd8b5a1f50b003ad9fb05fc16e5))
+-* **db:** Improve migration for status_code column ([72d2aff](https://github.com/robotnikz/Sunflow/commit/72d2affbf80ea4630b7c2391636210946deaf151))
+-* docker ([1870bd2](https://github.com/robotnikz/Sunflow/commit/1870bd2b9544edae4e94137c666e7d74bf08d60e))
+-* docker build ([42399b3](https://github.com/robotnikz/Sunflow/commit/42399b33d9f7032f1eee283540a3560ed2c2f7cc))
+-* Improve financial forecast calculation ([4793231](https://github.com/robotnikz/Sunflow/commit/4793231eab2427dfa1178704f65f8b414885794e))
+-* **settings:** Improve financial return input styling ([13a61bd](https://github.com/robotnikz/Sunflow/commit/13a61bdf8e42de151eee19ce594f84412abeaaeb))
+-* **SettingsModal:** Improve financial return input styling ([958fc84](https://github.com/robotnikz/Sunflow/commit/958fc84e2e71cfd6f8191ffd4dd128349d51604e))
+-
+-
+-### Features
+-
+-* Add battery and efficiency charts ([3de494f](https://github.com/robotnikz/Sunflow/commit/3de494f4ba0f3a251288826cecb9240c4d604bed))
+-* Add custom date range for history ([1dd3e1f](https://github.com/robotnikz/Sunflow/commit/1dd3e1fedd5bbbdfed2141576ededbdb5e1c360e))
+-* Add degradation and inflation rates to config ([2f41c84](https://github.com/robotnikz/Sunflow/commit/2f41c848c2707a521673c62d6dd1758a7693d7d5))
+-* Add hourly time range and database index ([818aa92](https://github.com/robotnikz/Sunflow/commit/818aa921aa0f5a9eb23bf6ec643021da58fd79d8))
+-* Add initial values for historical data ([9991261](https://github.com/robotnikz/Sunflow/commit/99912610246e4d767e97eb2c66230ccbad5f9a85))
+-* Add inverter status to history and display timeline ([614c38c](https://github.com/robotnikz/Sunflow/commit/614c38ccfc78a72eb0802d2bd8127feb49c7a7f1))
+-* Add local timestamps and animations ([e4579af](https://github.com/robotnikz/Sunflow/commit/e4579afaa3b98b14de5740b32d8e63423736d63b))
+-* Add location and weather support ([cda3a0c](https://github.com/robotnikz/Sunflow/commit/cda3a0cc7772af1654641c4f9c28c9b6a1f63ad2))
+-* Add real-time autonomy and self-consumption metrics ([74c59f5](https://github.com/robotnikz/Sunflow/commit/74c59f5987327696af4f47fc4fd1c34f3e974b41))
+-* Add system info and update checks ([fdcfd66](https://github.com/robotnikz/Sunflow/commit/fdcfd6617af0614f74389e125e135609ae4f995f))
+-* Adjust component heights for better layout ([8927897](https://github.com/robotnikz/Sunflow/commit/89278979d91998260d522f59026aa9afa265fc7e))
+-* **AmortizationWidget:** Improve break-even estimation ([cf9c5cc](https://github.com/robotnikz/Sunflow/commit/cf9c5cc67f75732d00f7d6fb45ce41bc0279984c))
+-* Auto-refresh ROI data every minute ([7b5d1f8](https://github.com/robotnikz/Sunflow/commit/7b5d1f898d5ff783dd96828fb3054ace9e8e6edb))
+-* Configure persistent data directory ([c6f467f](https://github.com/robotnikz/Sunflow/commit/c6f467f389c82b72fa8f6afa44fe5791d5ef1094))
+-* Configure Vite for development server proxy ([16177d3](https://github.com/robotnikz/Sunflow/commit/16177d385b4b0d7365ac711d7171d2e04c9d99ac))
+-* **dashboard:** Enhance stats and add CO2 calculation ([853ecb1](https://github.com/robotnikz/Sunflow/commit/853ecb1865c0eceee4c08b4d4161b8d711280cfe))
+-* Display grid power flow in UI and data ([115ba07](https://github.com/robotnikz/Sunflow/commit/115ba07de4abca3437dd855fa82697a95d87104c))
+-* Enhance financial calculations and UI ([1c1adb9](https://github.com/robotnikz/Sunflow/commit/1c1adb9b29d9a3deb5b7852d123610c26e42008b))
+-* Enhance UI with custom font and layout adjustments ([e8c6ee9](https://github.com/robotnikz/Sunflow/commit/e8c6ee9d3011052a9d0ee4ccbca846bf06a66ab9))
+-* Implement expense tracking for ROI calculation ([8e324c8](https://github.com/robotnikz/Sunflow/commit/8e324c8547870bb8a7e4b02aa893ae449267f19b))
+-* Implement real-time energy history and stats ([625efb6](https://github.com/robotnikz/Sunflow/commit/625efb6a71d1eb06e3a9edb1601f0a2e3291ddf8))
+-* Improve dashboard layout and chart aesthetics ([fcbb919](https://github.com/robotnikz/Sunflow/commit/fcbb919ee6f971e16816c5b2f1e365e22779020c))
+-* Improve dashboard layout and sectioning ([c4f07eb](https://github.com/robotnikz/Sunflow/commit/c4f07eb356018d1514503ffce3b6fce039bd4ac8))
+-* Improve Docker build and UI elements ([02f7929](https://github.com/robotnikz/Sunflow/commit/02f79295e71a3fee410aaea1b600a8fe96ab6c00))
+-* Improve energy data aggregation ([235faad](https://github.com/robotnikz/Sunflow/commit/235faadc4a9c283481aab37c7d57ba107dc8a019))
+-* Improve number input styling in settings ([3a1ef64](https://github.com/robotnikz/Sunflow/commit/3a1ef64adc89a7dca94b220d1ae24d87a7c3aff5))
+-* Improve UI element spacing and layout ([3f6f425](https://github.com/robotnikz/Sunflow/commit/3f6f425b086d5883f88d9efcfd484a2d57b2a9a0))
+-* Improve widget text styling ([d971060](https://github.com/robotnikz/Sunflow/commit/d971060aa5eb5f10cedd8989aeb2add8dd94bea5))
+-* Initialize SolarSense Dashboard project ([5961265](https://github.com/robotnikz/Sunflow/commit/596126547dd786a53a19e46027c562f0237afef8))
+-* Introduce dashboard refresh mechanism ([c469464](https://github.com/robotnikz/Sunflow/commit/c469464403396e9bcddfad4ed743c9dded5302ce))
+-* Introduce dynamic tariff management ([19fbc30](https://github.com/robotnikz/Sunflow/commit/19fbc30435441a1ee9a700591b327a269b1202f0))
+-* Introduce visual BatteryWidget ([de9f0d1](https://github.com/robotnikz/Sunflow/commit/de9f0d1c130fd97c02a9f48e7938d0d28eaa305e))
+-* Migrate backend to ES Modules and add dependencies ([be88ab0](https://github.com/robotnikz/Sunflow/commit/be88ab0336151ebe36a2111165b4cc729292a921))
+-* **powerflow:** Improve visual flow and layout ([942c19d](https://github.com/robotnikz/Sunflow/commit/942c19da0ddbfe675005ec95ee75edfa659881de))
+-* Refactor PowerFlow component layout ([d8deb6c](https://github.com/robotnikz/Sunflow/commit/d8deb6c2c4b202480f674973189d08c3659d5d2c))
+-* **server:** Calculate yearly recurring costs ([09bb6a4](https://github.com/robotnikz/Sunflow/commit/09bb6a448fb59c6afa37dab77514245a001f64bf))
+-* **settings:** Add calibration tab and improve UI ([dc276d2](https://github.com/robotnikz/Sunflow/commit/dc276d28f4e4f84c98845137fdc0da98a5c5fa01))
+-* **settings:** Improve historical data input guidance ([b6ab194](https://github.com/robotnikz/Sunflow/commit/b6ab19454f2807fe9cbe9e537be22334ea214626))
+-* **StatusTimeline:** Simplify component logic and props ([b19aa13](https://github.com/robotnikz/Sunflow/commit/b19aa13a1d56823ddc08186ae44ce427e90bfd18))
+-* Update module imports and Vite proxy configuration ([73284f3](https://github.com/robotnikz/Sunflow/commit/73284f3f4aff876c57e57bb1181c1894d2412482))
+diff --git a/sunflow/sunflow/CONTRIBUTING.md b/sunflow/sunflow/CONTRIBUTING.md
 index b20cbc5..e1c6421 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CONTRIBUTING.md"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/CONTRIBUTING.md"
+--- a/sunflow/sunflow/CONTRIBUTING.md
++++ b/sunflow/sunflow/CONTRIBUTING.md
 @@ -18,11 +18,11 @@ These instructions are for developers. If you just want to run SunFlow, follow t
  - Unit/Integration: Vitest
  
@@ -351,10 +821,257 @@ index b20cbc5..e1c6421 100644
  
  ### Unit/Integration (Vitest)
  
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/README.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/README.md"
+diff --git a/sunflow/sunflow/Dockerfile b/sunflow/sunflow/Dockerfile
+deleted file mode 100644
+index 87e9ac1..0000000
+--- a/sunflow/sunflow/Dockerfile
++++ /dev/null
+@@ -1,52 +0,0 @@
+-# Build Stage
+-FROM node:22-slim AS builder
+-WORKDIR /app
+-
+-# Copy package files first for better caching
+-COPY package*.json ./
+-
+-# Install all dependencies (including devDependencies for building)
+-RUN npm ci
+-
+-# Copy source code
+-COPY . .
+-
+-# Build frontend
+-RUN npm run build
+-
+-# Production Stage
+-FROM node:22-slim
+-WORKDIR /app
+-
+-# Ensure we can reliably drop privileges at runtime.
+-# (Some slim images may not include a usable `su` binary by default.)
+-RUN apt-get update \
+-	&& apt-get install -y --no-install-recommends gosu \
+-	&& rm -rf /var/lib/apt/lists/*
+-
+-# Install only production dependencies
+-COPY package*.json ./
+-RUN npm ci --omit=dev \
+-	&& npm cache clean --force
+-
+-# Copy built assets from builder stage
+-COPY --from=builder /app/dist ./dist
+-COPY --from=builder /app/server.js ./
+-COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
+-
+-# Create persistent data directory and drop root privileges
+-RUN mkdir -p /app/data \
+-	&& chown -R node:node /app
+-
+-# Environment setup
+-ENV PORT=3000
+-ENV NODE_ENV=production
+-
+-EXPOSE 3000
+-
+-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+-	CMD node -e "fetch('http://127.0.0.1:3000/api/info').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+-
+-RUN chmod +x /app/entrypoint.sh
+-
+-ENTRYPOINT ["/app/entrypoint.sh"]
+\ No newline at end of file
+diff --git a/sunflow/sunflow/OPERATIONS.md b/sunflow/sunflow/OPERATIONS.md
+deleted file mode 100644
+index f00265e..0000000
+--- a/sunflow/sunflow/OPERATIONS.md
++++ /dev/null
+@@ -1,182 +0,0 @@
+-# SunFlow Operations Runbook
+-
+-This document focuses on day-2 operations: backups, upgrades, rollbacks, and basic troubleshooting.
+-
+-## Recommended deployment defaults
+-
+-- Pin production deployments to a version tag (or digest), not only `:latest`.
+-- Persist data via a bind mount (`./sunflow-data:/app/data`).
+-- If exposed beyond your LAN, use a reverse proxy with TLS and authentication.
+-
+-## Data persistence layout
+-
+-SunFlow stores state in the directory configured as `DATA_DIR` (Docker image default: `/app/data`).
+-
+-Typical files:
+-
+-- `config.json` (runtime configuration)
+-- `solar_data.db` (SQLite database)
+-- `uploads/` (temporary upload files)
+-
+-If you see `SQLITE_READONLY: attempt to write a readonly database`, the container user likely cannot write to your bind-mounted data directory (common after upgrading from an older image that ran as root). Fix the host folder permissions/attributes, then restart the container.
+-
+-## Backup & restore
+-
+-### Backup (Docker Compose)
+-
+-SunFlow stores its data in the `./sunflow-data/` folder next to your `docker-compose.yml` (mounted to `/app/data` in the container).
+-
+-#### Backup
+-
+-1. Stop the container (recommended to avoid copying a changing DB):
+-
+-   - `docker compose stop`
+-
+-2. Copy the entire data directory:
+-
+-   - `cp -r ./sunflow-data ./sunflow-data.backup-YYYYMMDD`
+-
+-3. Start the container again:
+-
+-   - `docker compose start`
+-
+-### Restore (Docker Compose)
+-
+-#### Restore
+-
+-1. Stop the container:
+-
+-   - `docker compose stop`
+-
+-2. Replace the data directory with a backup:
+-
+-   - `rm -rf ./sunflow-data`
+-   - `cp -r ./sunflow-data.backup-YYYYMMDD ./sunflow-data`
+-
+-3. Start the container:
+-
+-   - `docker compose start`
+-
+-Notes:
+-
+-- If you use filesystem snapshots (NAS), prefer snapshots over file copies.
+-- If you must back up while running, copy the whole directory and validate the DB on restore.
+-
+-## Upgrade & rollback
+-
+-### Upgrade
+-
+-Upgrade keeps your DB/history as long as you keep your `./sunflow-data/` folder and the mount `./sunflow-data:/app/data` unchanged.
+-
+-1. Update the image tag in `docker-compose.yml`.
+-
+-   Example:
+-
+-   - `ghcr.io/robotnikz/sunflow:1.11.0`
+-
+-2. Pull and restart:
+-
+-   - `docker compose pull`
+-   - `docker compose up -d`
+-
+-### Rollback
+-
+-1. Switch the image tag back to the last known-good version.
+-2. Pull and restart:
+-
+-   - `docker compose pull`
+-   - `docker compose up -d`
+-
+-## Health checks & monitoring
+-
+-### Container health
+-
+-The official image includes a Docker `HEALTHCHECK` against `GET /api/info`.
+-
+-Check status:
+-
+-- `docker ps` (look for `healthy`)
+-- `docker inspect sunflow --format '{{json .State.Health}}'`
+-
+-### Logs
+-
+-- `docker logs -f sunflow`
+-
+-### Basic resource monitoring
+-
+-- CPU/memory: `docker stats sunflow`
+-- Disk usage:
+-   - monitor the `sunflow-data/` directory growth over time
+-
+-## Reverse proxy notes
+-
+-If you run SunFlow behind a reverse proxy (nginx, Traefik, Caddy):
+-
+-- Set `TRUST_PROXY=1` so rate limiting and IP logic behave correctly.
+-- Avoid exposing the raw container port publicly without auth.
+-
+-## Common failure modes
+-
+-### 1) UI loads but charts are empty
+-
+-- Verify the data directory is mounted correctly (`./sunflow-data:/app/data`).
+-- Check logs for SQLite errors.
+-
+-### 2) Forecast fails
+-
+-- Ensure Solcast is configured.
+-- Nighttime behavior is expected to skip Solcast calls.
+-
+-### 3) CSV import fails
+-
+-- Verify upload size limits (`UPLOAD_MAX_BYTES`).
+-- Check logs for validation errors.
+-
+-## Stability exercises (manual)
+-
+-- Restart/resume: run a soak test (see [CONTRIBUTING.md](CONTRIBUTING.md)) and execute `docker compose restart` during the run.
+-- Network outage: temporarily block inverter access and confirm the process stays alive and the UI remains usable.
+-
+-## 24h stability checklist (manual)
+-
+-This is a practical long-run validation to catch leaks, unhandled errors, and “slow degradation” issues.
+-
+-### Before you start
+-
+-- Use a persistent bind mount (`./sunflow-data:/app/data`).
+-- Ensure the container is healthy:
+-   - `docker ps` (should show `healthy`)
+-   - `docker logs --tail 200 sunflow` (no crash loop)
+-
+-### Run
+-
+-1. Start the container:
+-
+-    - `docker compose up -d`
+-
+-2. Start a lightweight soak against the running service:
+-
+-   - Run the soak test script (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+-
+-3. During the 24h period, perform these exercises:
+-
+-    - Restart/resume: `docker compose restart`
+-    - Stop/start: `docker compose stop` then `docker compose start`
+-    - Network outage simulation: make the inverter IP unreachable for ~5-10 minutes (router rule / firewall), then restore connectivity
+-
+-### What to monitor
+-
+-- Health status stays `healthy` (no flapping).
+-- Logs:
+-   - no repeated unhandled exceptions
+-   - no repeated DB “busy/locked” errors
+-- Resource usage:
+-   - `docker stats sunflow` (CPU/memory does not grow without bound)
+-- Disk:
+-   - data directory growth is plausible for your retention settings
+-
+-### Expected outcome
+-
+-- No sustained 5xx responses during normal operation.
+-- After restart or network outage, the service recovers without manual intervention.
+-- UI stays usable (even if live data temporarily fails).
+diff --git a/sunflow/sunflow/README.md b/sunflow/sunflow/README.md
 index d1728aa..48967d0 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/README.md"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/README.md"
+--- a/sunflow/sunflow/README.md
++++ b/sunflow/sunflow/README.md
 @@ -132,7 +132,7 @@ docker compose up -d
  > **Upgrade safety (data/history):** keep your `./sunflow-data` directory when updating. If you delete or change this mount, SunFlow will start with an empty database.
  
@@ -399,31 +1116,357 @@ index d1728aa..48967d0 100644
  
  ---
  
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/SECURITY_CHECKLIST.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/SECURITY.md"
-similarity index 93%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/SECURITY_CHECKLIST.md"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/SECURITY.md"
-index 353d994..2c815c1 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/SECURITY_CHECKLIST.md"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/SECURITY.md"
-@@ -61,11 +61,11 @@ Notes:
- 
- - Pin production to a version tag (or digest), not only `:latest`.
- - Keep the last known-good tag available for rollback.
--- Practice rollback once (see [OPERATIONS.md](OPERATIONS.md)).
+diff --git a/sunflow/sunflow/SECURITY.md b/sunflow/sunflow/SECURITY.md
+new file mode 100644
+index 0000000..2c815c1
+--- /dev/null
++++ b/sunflow/sunflow/SECURITY.md
+@@ -0,0 +1,71 @@
++# SunFlow Security Checklist (Self-hosting)
++
++This checklist is meant as a practical “before you expose it beyond your LAN” guide.
++
++If you only run SunFlow on a trusted home LAN, you can skip some items — but **do not publish the container port directly to the internet without authentication**.
++
++## 1) Network exposure
++
++- Prefer binding to LAN only (or use a VPN). Avoid public port-forwarding.
++- If exposed beyond your LAN, put SunFlow behind a reverse proxy with:
++  - TLS
++  - authentication (Basic Auth / SSO / OAuth2 / forward-auth)
++  - rate limiting (proxy-level, optional)
++- Use firewall rules to limit who can reach the service.
++
++## 2) Required environment hardening
++
++- Set an admin token:
++  - `SUNFLOW_ADMIN_TOKEN` to a long, random value
++  - Call write endpoints with `Authorization: Bearer <token>`
++- Set a CORS allowlist for browser access from non-localhost origins:
++  - `CORS_ORIGIN=https://your-domain.example` (comma-separated list)
++- If running behind a reverse proxy, set:
++  - `TRUST_PROXY=1`
++
++Verification steps:
++- Without `Authorization: Bearer …`, write endpoints should return `401`.
++- `GET /api/config` should redact secrets when admin token protection is enabled.
++
++## 3) Discord webhook SSRF guard
++
++- Only configure Discord webhook URLs from Discord.
++- Avoid “generic webhook relays” or self-hosted endpoints.
++- If you keep notifications disabled, you can leave the webhook empty.
++
++Verification steps:
++- Calling the test-notification endpoint with a non-Discord URL must be rejected.
++
++## 4) Container & Compose hardening (optional but recommended)
++
++The image runs as non-root and includes a healthcheck.
++
++You can further harden Docker Compose:
++
++```yaml
++services:
++  sunflow:
++    read_only: true
++    tmpfs:
++      - /tmp
++    security_opt:
++      - no-new-privileges:true
++    cap_drop:
++      - ALL
++```
++
++Notes:
++- `read_only: true` requires all writes to happen under the mounted `/app/data` data directory and temp files to use `/tmp`.
++
++## 5) Updates & rollback strategy
++
++- Pin production to a version tag (or digest), not only `:latest`.
++- Keep the last known-good tag available for rollback.
 +- Practice rollback once (see [docs/OPERATIONS.md](docs/OPERATIONS.md)).
- 
- ## 6) Backups
- 
- - Back up the whole data directory (config + DB + uploads).
- - Perform a restore drill at least once.
- 
--See [OPERATIONS.md](OPERATIONS.md) for backup/restore commands.
++
++## 6) Backups
++
++- Back up the whole data directory (config + DB + uploads).
++- Perform a restore drill at least once.
++
 +See [docs/OPERATIONS.md](docs/OPERATIONS.md) for backup/restore commands.
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SettingsModal.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SettingsModal.tsx"
+diff --git a/sunflow/sunflow/SECURITY_CHECKLIST.md b/sunflow/sunflow/SECURITY_CHECKLIST.md
+deleted file mode 100644
+index 353d994..0000000
+--- a/sunflow/sunflow/SECURITY_CHECKLIST.md
++++ /dev/null
+@@ -1,71 +0,0 @@
+-# SunFlow Security Checklist (Self-hosting)
+-
+-This checklist is meant as a practical “before you expose it beyond your LAN” guide.
+-
+-If you only run SunFlow on a trusted home LAN, you can skip some items — but **do not publish the container port directly to the internet without authentication**.
+-
+-## 1) Network exposure
+-
+-- Prefer binding to LAN only (or use a VPN). Avoid public port-forwarding.
+-- If exposed beyond your LAN, put SunFlow behind a reverse proxy with:
+-  - TLS
+-  - authentication (Basic Auth / SSO / OAuth2 / forward-auth)
+-  - rate limiting (proxy-level, optional)
+-- Use firewall rules to limit who can reach the service.
+-
+-## 2) Required environment hardening
+-
+-- Set an admin token:
+-  - `SUNFLOW_ADMIN_TOKEN` to a long, random value
+-  - Call write endpoints with `Authorization: Bearer <token>`
+-- Set a CORS allowlist for browser access from non-localhost origins:
+-  - `CORS_ORIGIN=https://your-domain.example` (comma-separated list)
+-- If running behind a reverse proxy, set:
+-  - `TRUST_PROXY=1`
+-
+-Verification steps:
+-- Without `Authorization: Bearer …`, write endpoints should return `401`.
+-- `GET /api/config` should redact secrets when admin token protection is enabled.
+-
+-## 3) Discord webhook SSRF guard
+-
+-- Only configure Discord webhook URLs from Discord.
+-- Avoid “generic webhook relays” or self-hosted endpoints.
+-- If you keep notifications disabled, you can leave the webhook empty.
+-
+-Verification steps:
+-- Calling the test-notification endpoint with a non-Discord URL must be rejected.
+-
+-## 4) Container & Compose hardening (optional but recommended)
+-
+-The image runs as non-root and includes a healthcheck.
+-
+-You can further harden Docker Compose:
+-
+-```yaml
+-services:
+-  sunflow:
+-    read_only: true
+-    tmpfs:
+-      - /tmp
+-    security_opt:
+-      - no-new-privileges:true
+-    cap_drop:
+-      - ALL
+-```
+-
+-Notes:
+-- `read_only: true` requires all writes to happen under the mounted `/app/data` data directory and temp files to use `/tmp`.
+-
+-## 5) Updates & rollback strategy
+-
+-- Pin production to a version tag (or digest), not only `:latest`.
+-- Keep the last known-good tag available for rollback.
+-- Practice rollback once (see [OPERATIONS.md](OPERATIONS.md)).
+-
+-## 6) Backups
+-
+-- Back up the whole data directory (config + DB + uploads).
+-- Perform a restore drill at least once.
+-
+-See [OPERATIONS.md](OPERATIONS.md) for backup/restore commands.
+diff --git a/sunflow/sunflow/TESTPLAN.md b/sunflow/sunflow/TESTPLAN.md
+deleted file mode 100644
+index 3eb372a..0000000
+--- a/sunflow/sunflow/TESTPLAN.md
++++ /dev/null
+@@ -1,133 +0,0 @@
+-# Test Plan (SunFlow)
+-
+-Status: Work in progress (Branch: `audit-2026-01-15-security-hardening`) — focus: regression safety + operational scenarios.
+-
+-## 1) Functional Tests (What should the software do?)
+-
+-Goal: Verify the application meets its requirements (“does the system do exactly what is specified?”).
+-
+-### Core features / business logic (use cases)
+-
+-| Area | Use case | Expectation | Automated? |
+-|---|---|---|---|
+-| Config | Read/write config | GET returns defaults, POST persists, validation enforced | partially |
+-| Realtime | Fetch live data | Missing IP -> error; with IP -> stable data model | partially |
+-| Forecast | Solcast forecast | Cached during daytime, no Solcast calls at night, meaningful errors | partially |
+-| Tariffs | CRUD | Validation, at least 1 tariff remains, correct status codes | yes |
+-| Expenses | CRUD | Validation, correct status codes | yes |
+-| CSV Import | Preview/import | Preview returns headers+preview; import writes DB; tmp cleanup; clean error paths | yes |
+-| Notifications | Test notification | Only allowed Discord webhooks; robust error handling | yes |
+-| Update Check | /api/info | No network dependency in tests; latestVersion/updateAvailable set | yes |
+-
+-### Edge cases
+-- Empty inputs (e.g. missing/invalid `mapping`)
+-- Limits (upload size, JSON body limit)
+-- Invalid data (IDs, dates, negative values outside allowed ranges)
+-
+-### Error handling
+-- Every API returns consistent JSON errors and appropriate status codes.
+-
+-### Authorization / roles
+-- Optional: `SUNFLOW_ADMIN_TOKEN` enables admin-only behavior for mutating endpoints.
+-
+-## 2) Unit Tests
+-
+-Goal: Test isolated logic (fast, CI-friendly).
+-
+-- `services/api.ts`: query string building, error paths for `!res.ok`, parsing.
+-
+-## 3) Integration Tests
+-
+-Goal: Validate component interaction.
+-
+-- Backend ↔ SQLite (temporary data dir)
+-- Backend ↔ external APIs via mocks (axios)
+-
+-## 4) System Tests / E2E
+-
+-Goal: Validate UI ↔ backend as a whole.
+-
+-- Playwright smoke: app loads, dashboard visible, settings open.
+-- Playwright regression: settings persistence + critical UX guards.
+-- Playwright mocked broad coverage: deterministic UI coverage with mocked `/api/*` and Open‑Meteo (runs without inverter/external network).
+-
+-Notes:
+-- The mocked E2E suite uses Playwright request interception and synthetic fixtures only (no secrets, no real production data).
+-- This keeps the repo CI/public-friendly while still providing high confidence UI coverage.
+-
+-## 5) Non-functional Tests
+-
+-### a) Performance & load
+-- Manual/optional automated load with `autocannon` against `/api/info` and `/api/history`.
+-
+-### b) Stability & reliability
+-- Long-run (24h): polling, retention, restart/resume, DB file growth.
+-
+-- Soak (lightweight, automatable): run the soak test script (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+-	- Expected: no 5xx, no timeouts, stable status codes.
+-	- For Docker: start the container via Compose, then run the soak test against the published port.
+-	- Optional: restart the container during the soak and verify the service recovers cleanly.
+-
+-For a concrete 24h checklist (restart/resume, outage simulation, what to monitor), see `OPERATIONS.md`.
+-
+-### c) Security
+-- AuthN/Z: admin token enforced
+-- Input validation: invalid bodies/IDs
+-- Secrets: redaction when admin token is enabled
+-- Automated regressions: see `tests/api.security.regression.test.ts` (CORS allowlist + webhook SSRF guard).
+-
+-Manual self-hosting checklist: `SECURITY_CHECKLIST.md`.
+-
+-## 6) Usability & UX
+-
+-- Clear copy, consistent validation, actionable error messages.
+-
+-Checklist: `UX_CHECKLIST.md`.
+-
+-## 7) Compatibility & environment
+-
+-- Browser (E2E): Chromium/Firefox/WebKit (via Playwright)
+-- OS: Linux (recommended for self-hosting and CI-like parity)
+-- Node.js: tested via `package.json`; recommended: LTS (e.g. Node 20/22)
+-- Deployment: Docker, reverse proxy (TRUST_PROXY)
+-- Storage: SQLite DB persisted in `./sunflow-data/` (bind mount to `/app/data`)
+-
+-## 8) Regression
+-
+-Goal: Catch regressions early without slowing CI unnecessarily.
+-
+-Recommended pipeline (documentation; may differ from current CI implementation):
+-
+-- On every PR/push: run the standard checks (see [CONTRIBUTING.md](CONTRIBUTING.md))
+-- Optional/nightly: run E2E (Playwright)
+-- Release: same as PR/push, plus container build/publish
+-
+-Note: E2E can run nightly to reduce CI flakiness impact.
+-
+-## 9) Deployment & operations scenarios
+-
+-- Update/rollback via image tags (pinning recommended)
+-	- Recommendation: pin production deployments to a version tag (`ghcr.io/robotnikz/sunflow:<version>`), not only `latest`.
+-	- Update: change the tag and restart the container.
+-	- Rollback: switch back to the previous tag and restart.
+-
+-- DB persisted via bind mount (Docker Compose default): `./sunflow-data:/app/data`
+-	- Backup: stop container, then copy the `sunflow-data/` directory (see `OPERATIONS.md`).
+-	- Monitoring: DB growth, CPU/RAM (especially during long polling/soak)
+-
+-Manual ops scenarios (short):
+-- Restart/resume: restart the container while a soak test is running
+-- Network outage: inverter IP temporarily unreachable → API must not crash; UI should remain usable
+-
+-For a practical runbook (backup/restore, upgrades/rollbacks, monitoring), see `OPERATIONS.md`.
+-
+-## 10) Docs & tests
+-
+-- README/setup/examples must stay consistent with current behavior.
+-- References:
+-	- Security: `AUDIT.md`
+-	- How to run tests: see [CONTRIBUTING.md](CONTRIBUTING.md)
+-
+-## How to run
+-
+-See [CONTRIBUTING.md](CONTRIBUTING.md) for the exact commands (tests, Playwright, load/soak scripts).
+diff --git a/sunflow/sunflow/UX_CHECKLIST.md b/sunflow/sunflow/UX_CHECKLIST.md
+deleted file mode 100644
+index 2750a94..0000000
+--- a/sunflow/sunflow/UX_CHECKLIST.md
++++ /dev/null
+@@ -1,31 +0,0 @@
+-# SunFlow Usability & UX Checklist
+-
+-This checklist is meant for quick manual validation after changes or upgrades.
+-
+-## Accessibility & keyboard
+-
+-- Settings can be opened/closed without a mouse (keyboard reachable controls).
+-- Modal close works via the close button and `Escape`.
+-- Important controls have accessible names (buttons, toggles, inputs).
+-- Tab-like navigation in Settings is clearly labeled and reachable.
+-
+-## Clarity & error messages
+-
+-- Error messages are actionable (what happened + what to do next).
+-- Empty states explain what to configure (e.g., fresh install opens Settings).
+-- Copy is consistent (units, currency, dates).
+-
+-## Responsiveness
+-
+-- Dashboard and Settings remain usable on smaller screens.
+-- Settings tabs remain reachable on narrow widths (horizontal scroll is acceptable).
+-
+-## Performance perception
+-
+-- Loading states appear quickly when data is missing/slow.
+-- The UI remains responsive while backend polling is active.
+-
+-## Regression smoke (recommended)
+-
+-- Run the Playwright smoke suite (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+-- Open Settings, switch to Notifications, verify toggle is reachable and labeled.
+diff --git a/sunflow/sunflow/check_db.js b/sunflow/sunflow/check_db.js
+deleted file mode 100644
+index 05a77ce..0000000
+--- a/sunflow/sunflow/check_db.js
++++ /dev/null
+@@ -1,11 +0,0 @@
+-import sqlite3 from 'sqlite3';
+-const db = new sqlite3.Database('sunflow-data/solar_data.db');
+-db.all('PRAGMA table_info(energy_data)', (err, rows) => {
+-    if (err) console.error(err);
+-    console.log('TABLE INFO:', JSON.stringify(rows, null, 2));
+-    db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='energy_data'", (err, row) => {
+-        if (err) console.error(err);
+-        console.log('SQL:', row ? row.sql : 'NOT FOUND');
+-        db.close();
+-    });
+-});
+diff --git a/sunflow/sunflow/components/SettingsModal.tsx b/sunflow/sunflow/components/SettingsModal.tsx
 index 0d2fa70..c6e54a7 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SettingsModal.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SettingsModal.tsx"
+--- a/sunflow/sunflow/components/SettingsModal.tsx
++++ b/sunflow/sunflow/components/SettingsModal.tsx
 @@ -2,7 +2,7 @@
  import React, { useState, useEffect } from 'react';
  import { SystemConfig, Tariff, Expense, Appliance } from '../types';
@@ -478,7 +1521,7 @@ index 0d2fa70..c6e54a7 100644
                    <div>
                      <label className="block text-sm font-medium text-slate-400 mb-2">System Commissioning Date</label>
 @@ -500,6 +498,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
-                         <option value="GBP">GBP (┬ú)</option>
+                         <option value="GBP">GBP (£)</option>
                      </select>
                    </div>
 +                                    <div>
@@ -495,10 +1538,10 @@ index 0d2fa70..c6e54a7 100644
                </div>
                <div className="space-y-4 pt-4">
                   <h3 className="text-slate-300 font-bold border-b border-slate-700 pb-2 flex items-center gap-2"><MapPin size={18}/> Location & Capacity</h3>
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SmartRecommendations.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SmartRecommendations.tsx"
+diff --git a/sunflow/sunflow/components/SmartRecommendations.tsx b/sunflow/sunflow/components/SmartRecommendations.tsx
 index 4384457..5b1e654 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SmartRecommendations.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SmartRecommendations.tsx"
+--- a/sunflow/sunflow/components/SmartRecommendations.tsx
++++ b/sunflow/sunflow/components/SmartRecommendations.tsx
 @@ -57,8 +57,24 @@ const currencySymbolFor = (currency: string | undefined) => {
  
  const clampNumber = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
@@ -525,116 +1568,963 @@ index 4384457..5b1e654 100644
      const currencySymbol = currencySymbolFor(currency);
  
      const socPct = clampNumber(Number(soc || 0), 0, 100);
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/Dockerfile" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/Dockerfile"
-similarity index 95%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/Dockerfile"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/Dockerfile"
-index 87e9ac1..d871741 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/Dockerfile"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/Dockerfile"
-@@ -32,7 +32,7 @@ RUN npm ci --omit=dev \
- # Copy built assets from builder stage
- COPY --from=builder /app/dist ./dist
- COPY --from=builder /app/server.js ./
--COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
+diff --git a/sunflow/sunflow/docker/Dockerfile b/sunflow/sunflow/docker/Dockerfile
+new file mode 100644
+index 0000000..d871741
+--- /dev/null
++++ b/sunflow/sunflow/docker/Dockerfile
+@@ -0,0 +1,52 @@
++# Build Stage
++FROM node:22-slim AS builder
++WORKDIR /app
++
++# Copy package files first for better caching
++COPY package*.json ./
++
++# Install all dependencies (including devDependencies for building)
++RUN npm ci
++
++# Copy source code
++COPY . .
++
++# Build frontend
++RUN npm run build
++
++# Production Stage
++FROM node:22-slim
++WORKDIR /app
++
++# Ensure we can reliably drop privileges at runtime.
++# (Some slim images may not include a usable `su` binary by default.)
++RUN apt-get update \
++	&& apt-get install -y --no-install-recommends gosu \
++	&& rm -rf /var/lib/apt/lists/*
++
++# Install only production dependencies
++COPY package*.json ./
++RUN npm ci --omit=dev \
++	&& npm cache clean --force
++
++# Copy built assets from builder stage
++COPY --from=builder /app/dist ./dist
++COPY --from=builder /app/server.js ./
 +COPY --from=builder /app/docker/entrypoint.sh ./entrypoint.sh
- 
- # Create persistent data directory and drop root privileges
- RUN mkdir -p /app/data \
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/entrypoint.sh" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/entrypoint.sh"
-similarity index 100%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/entrypoint.sh"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/entrypoint.sh"
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/AUDIT.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/AUDIT.md"
-similarity index 96%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/AUDIT.md"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/AUDIT.md"
-index ad54478..6c22e6b 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/AUDIT.md"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/AUDIT.md"
-@@ -61,7 +61,7 @@ Because of that, the safest stance is: **do not expose SunFlow to the internet w
-   - upload limits and robust cleanup
-   - fixed a runtime issue in `/api/forecast` outside daylight window
- 
--- Container hardening (see `Dockerfile`):
++
++# Create persistent data directory and drop root privileges
++RUN mkdir -p /app/data \
++	&& chown -R node:node /app
++
++# Environment setup
++ENV PORT=3000
++ENV NODE_ENV=production
++
++EXPOSE 3000
++
++HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
++	CMD node -e "fetch('http://127.0.0.1:3000/api/info').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
++
++RUN chmod +x /app/entrypoint.sh
++
++ENTRYPOINT ["/app/entrypoint.sh"]
+\ No newline at end of file
+diff --git a/sunflow/sunflow/docker/entrypoint.sh b/sunflow/sunflow/docker/entrypoint.sh
+new file mode 100644
+index 0000000..2c31be8
+--- /dev/null
++++ b/sunflow/sunflow/docker/entrypoint.sh
+@@ -0,0 +1,24 @@
++#!/bin/sh
++set -eu
++
++# Ensure data dir exists (volume or bind mount)
++mkdir -p /app/data
++
++# If running as root, try to ensure the runtime user can write.
++# - Named volumes are typically initialized from the image (permissions preserved)
++# - Bind mounts may require chown/chmod; on some platforms/filesystems this can fail
++if [ "$(id -u)" = "0" ]; then
++  chown -R node:node /app/data 2>/dev/null || true
++  chmod -R u+rwX /app/data 2>/dev/null || true
++
++  # Run the app as the non-root node user
++  if command -v gosu >/dev/null 2>&1; then
++    exec gosu node node server.js
++  fi
++
++  # Fallback (older images): use `su` if available.
++  exec su node -s /bin/sh -c "exec node server.js"
++fi
++
++# Already non-root
++exec node server.js
+diff --git a/sunflow/sunflow/docs/AUDIT.md b/sunflow/sunflow/docs/AUDIT.md
+new file mode 100644
+index 0000000..6c22e6b
+--- /dev/null
++++ b/sunflow/sunflow/docs/AUDIT.md
+@@ -0,0 +1,116 @@
++# SunFlow Audit (Architecture, Security, Hardening)
++
++Date: 2026-01-15
++Branch: `audit-2026-01-15-security-hardening`
++
++## Architecture (as implemented)
++
++- Single-container “monolith”: React/Vite static frontend served from the same Express backend.
++- Persistent state stored in SQLite under `/app/data` (mounted data directory in Docker Compose; bind-mounted by default).
++- Background jobs:
++  - 1-minute inverter polling
++  - hourly retention/aggregation job
++- External integrations:
++  - Fronius Solar API via HTTP to a user-configured `inverterIp`
++  - Solcast API via HTTPS using user-provided API key
++  - Discord notifications via webhook
++  - GitHub Releases check via GitHub API
++
++## Threat model assumptions
++
++This project is typically run on a home LAN/NAS/Raspberry Pi. If the service is exposed to the public internet without authentication, an attacker can:
++
++- read/modify configuration
++- trigger network requests (SSRF) via webhook/test endpoints and potentially via inverter host
++- upload CSV files to influence/overwrite stored history
++
++Because of that, the safest stance is: **do not expose SunFlow to the internet without a reverse proxy + auth**.
++
++## High-impact findings (summary)
++
++### 1) Missing auth on write/admin endpoints
++- Risk: anyone who can reach the port can change settings, import data, and potentially trigger network actions.
++- Fix added: optional Bearer token protection for write/admin routes (`SUNFLOW_ADMIN_TOKEN`).
++
++### 2) SSRF via Discord webhook handling
++- Risk: `/api/test-notification` could be used to POST to arbitrary URLs if reachable.
++- Fix added: webhook allowlist (HTTPS + Discord webhook host + `/api/webhooks/…`).
++
++### 3) Overly-permissive CORS
++- Risk: in a browser context, any site could call the API if user visits a malicious webpage, as long as the service is reachable.
++- Fix added: secure-by-default CORS (prod requires explicit allowlist via `CORS_ORIGIN`; dev allows localhost:5173).
++
++### 4) Unbounded CSV upload / parsing
++- Risk: memory/CPU DoS with large uploads; JSON parsing exceptions could leak temp files.
++- Fix added: Multer upload limits + safer parsing and cleanup.
++
++### 5) Docker hardening
++- Risk: running as root and using non-LTS Node image increases blast radius and operational risk.
++- Fix added: switch to Node 22 LTS image, run as non-root, add healthcheck.
++
++## Changes implemented in this branch
++
++- Server hardening (see `server.js`):
++  - `x-powered-by` disabled
++  - optional `TRUST_PROXY`
++  - CORS allowlist behavior
++  - optional admin Bearer token on write routes
++  - secret redaction in `/api/config` when admin token is set
++  - Discord webhook allowlist
++  - inverter host sanitization
++  - upload limits and robust cleanup
++  - fixed a runtime issue in `/api/forecast` outside daylight window
++
 +- Container hardening (see `docker/Dockerfile`):
-   - Node 22 LTS
-   - reproducible installs via lockfile
-   - non-root execution (`USER node`)
-@@ -102,8 +102,8 @@ Notes:
- - Keep secrets out of config responses when possible; if you set `SUNFLOW_ADMIN_TOKEN`, secrets are redacted for non-admin requests.
- 
- See also:
--- Practical self-hosting checklist: `SECURITY_CHECKLIST.md`
--- Day-2 operations runbook: `OPERATIONS.md`
++  - Node 22 LTS
++  - reproducible installs via lockfile
++  - non-root execution (`USER node`)
++  - healthcheck to `/api/info`
++
++## Recommended deployment hardening (Compose)
++
++Example additions to `docker-compose.yml`:
++
++```yaml
++services:
++  sunflow:
++    # If you use a reverse proxy in front, set TRUST_PROXY
++    environment:
++      - TRUST_PROXY=1
++      # Optional: protect admin/write endpoints
++      # - SUNFLOW_ADMIN_TOKEN=change-me-long-random
++      # If you run the UI from another origin:
++      # - CORS_ORIGIN=https://your-domain.example
++
++    # Container hardening (verify compatibility in your setup)
++    read_only: true
++    tmpfs:
++      - /tmp
++    security_opt:
++      - no-new-privileges:true
++    cap_drop:
++      - ALL
++```
++
++Notes:
++- `read_only: true` requires that all writes happen under the mounted `/app/data` volume and temp files use `/tmp` (tmpfs).
++- If you expose the service beyond your LAN, put it behind a reverse proxy with TLS and authentication.
++
++## Operational recommendations
++
++- Prefer pinning images by version tag or digest in Compose (avoid `:latest` for predictable rollbacks).
++- Keep secrets out of config responses when possible; if you set `SUNFLOW_ADMIN_TOKEN`, secrets are redacted for non-admin requests.
++
++See also:
 +- Practical self-hosting checklist: [SECURITY.md](../SECURITY.md)
 +- Day-2 operations runbook: [OPERATIONS.md](OPERATIONS.md)
- 
- ## Env var reference (added/used)
- 
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CHANGELOG.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/CHANGELOG.md"
-similarity index 100%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CHANGELOG.md"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/CHANGELOG.md"
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/OPERATIONS.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/OPERATIONS.md"
-similarity index 100%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/OPERATIONS.md"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/OPERATIONS.md"
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/TESTPLAN.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/TESTPLAN.md"
-similarity index 95%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/TESTPLAN.md"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/TESTPLAN.md"
-index 3eb372a..cf9f839 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/TESTPLAN.md"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/TESTPLAN.md"
-@@ -63,12 +63,12 @@ Notes:
- ### b) Stability & reliability
- - Long-run (24h): polling, retention, restart/resume, DB file growth.
- 
--- Soak (lightweight, automatable): run the soak test script (see [CONTRIBUTING.md](CONTRIBUTING.md)).
++
++## Env var reference (added/used)
++
++- `SUNFLOW_ADMIN_TOKEN`: if set, write/admin routes require `Authorization: Bearer <token>`.
++- `SUNFLOW_PROTECT_SECRETS`: default `true` when `SUNFLOW_ADMIN_TOKEN` is set; set to `false` to disable redaction.
++- `CORS_ORIGIN` / `SUNFLOW_CORS_ORIGIN`: comma-separated allowlist for browsers.
++- `CORS_DISABLED` / `SUNFLOW_CORS_DISABLED`: set to `true` to disable CORS middleware entirely.
++- `TRUST_PROXY`: set to `1`/`true` when behind a reverse proxy.
++- `UPLOAD_MAX_BYTES`: CSV upload max size (default 15MB).
++- `JSON_BODY_LIMIT`: JSON body size limit (default `1mb`).
+diff --git a/sunflow/sunflow/docs/CHANGELOG.md b/sunflow/sunflow/docs/CHANGELOG.md
+new file mode 100644
+index 0000000..9266ad5
+--- /dev/null
++++ b/sunflow/sunflow/docs/CHANGELOG.md
+@@ -0,0 +1,342 @@
++## [1.11.1](https://github.com/robotnikz/Sunflow/compare/v1.11.0...v1.11.1) (2026-01-16)
++
++
++### Bug Fixes
++
++* constrain uploaded file paths ([146fe61](https://github.com/robotnikz/Sunflow/commit/146fe61d5267adcfe84c1598854d63e240c98e53))
++* dedupe /api/energy overlaps ([db7cfbb](https://github.com/robotnikz/Sunflow/commit/db7cfbbd9098c6705d5456e9486171512cfb2095))
++* dedupe /api/history overlaps ([8da489f](https://github.com/robotnikz/Sunflow/commit/8da489f24702bc0becbf05ef74987cc148811e33))
++* **docker:** handle readonly DB permissions ([5151b54](https://github.com/robotnikz/Sunflow/commit/5151b54b066b2d3e7ab40239ff4222cf8e812da1))
++* **docker:** make /app/data writable out-of-box ([19e17ff](https://github.com/robotnikz/Sunflow/commit/19e17fff32822b651fee9c75ffd06abb82dc4d7c))
++* sanitize upload temp file paths ([9517666](https://github.com/robotnikz/Sunflow/commit/9517666de3f2421aaa08f2b29e41f99d985248fb))
++* **ui:** close settings modal on Escape ([165f2ef](https://github.com/robotnikz/Sunflow/commit/165f2ef46cd3f8c4fe276e8af56bb45d514e0f6a))
++* validate csv import mapping ([d889e7f](https://github.com/robotnikz/Sunflow/commit/d889e7f3469ea40816c7fe681766d0a8c00272bd))
++
++# [1.11.0](https://github.com/robotnikz/Sunflow/compare/v1.10.1...v1.11.0) (2026-01-15)
++
++
++### Features
++
++* trigger 1.11.0 release ([b2531d1](https://github.com/robotnikz/Sunflow/commit/b2531d106fdb0e81e0b045a8ec70003fac59e62b))
++
++## [1.10.1](https://github.com/robotnikz/Sunflow/compare/v1.10.0...v1.10.1) (2026-01-15)
++
++
++### Bug Fixes
++
++* **smart-usage:** respect reserve SOC in smart usage and notifications ([db3409d](https://github.com/robotnikz/Sunflow/commit/db3409dccc9a7248f525fd4f70ace32be7e6dba8))
++* **smart-usage:** use real sunrise/sunset boundaries ([542ec5d](https://github.com/robotnikz/Sunflow/commit/542ec5d84ad77e19c5b9afa6477a3dd0eb2435ed))
++
++# [1.10.0](https://github.com/robotnikz/Sunflow/compare/v1.9.3...v1.10.0) (2026-01-15)
++
++
++### Bug Fixes
++
++* **smart-recommendations:** show per-run cost and battery equivalent ([df77e51](https://github.com/robotnikz/Sunflow/commit/df77e513c4841bfb06d58dc567abab79b2223e70))
++
++
++### Features
++
++* **appliances:** allow kWh-per-run or watts+duration ([f361103](https://github.com/robotnikz/Sunflow/commit/f361103ca3441a42d4732eb748bfdc4dd5c94a9d))
++
++## [1.9.3](https://github.com/robotnikz/Sunflow/compare/v1.9.2...v1.9.3) (2026-01-15)
++
++
++### Bug Fixes
++
++* **scenario-planner:** align baseline with measured flows ([0fa93f7](https://github.com/robotnikz/Sunflow/commit/0fa93f7923ee79b466b3ff17947aab471e816c04))
++* **scenario-planner:** avoid misleading battery suggestion ([9372a23](https://github.com/robotnikz/Sunflow/commit/9372a231263864397bbec6d31b8f173e137c2390))
++
++## [1.9.2](https://github.com/robotnikz/Sunflow/compare/v1.9.1...v1.9.2) (2026-01-15)
++
++
++### Bug Fixes
++
++* **scenario-planner:** account for PV/battery dependency ([11f25e6](https://github.com/robotnikz/Sunflow/commit/11f25e643468e3578977670a2a6c8151e0cae18d))
++
++## [1.9.1](https://github.com/robotnikz/Sunflow/compare/v1.9.0...v1.9.1) (2026-01-13)
++
++
++### Bug Fixes
++
++* **ui:** simplify awattar compare inputs ([7e76f42](https://github.com/robotnikz/Sunflow/commit/7e76f42f9fc5b34ec75cea216ed2c069eef8b76c))
++
++# [1.9.0](https://github.com/robotnikz/Sunflow/compare/v1.8.0...v1.9.0) (2026-01-13)
++
++
++### Features
++
++* **dashboard:** add aWATTar dynamic tariff comparison ([7a2f279](https://github.com/robotnikz/Sunflow/commit/7a2f27955aeeebd05a8b75e24c03fa001989b81c))
++
++# [1.8.0](https://github.com/robotnikz/Sunflow/compare/v1.7.0...v1.8.0) (2026-01-13)
++
++
++### Features
++
++* **tariffs:** compare fixed vs aWATTar prices ([f9121f9](https://github.com/robotnikz/Sunflow/commit/f9121f954f570d4428bfda3c1d3f8c0af2fa6e65))
++
++# [1.7.0](https://github.com/robotnikz/Sunflow/compare/v1.6.0...v1.7.0) (2026-01-12)
++
++
++### Features
++
++* **scenario-planner:** add timeframe selector and baseline autonomy ([93c20ad](https://github.com/robotnikz/Sunflow/commit/93c20ada4ab7f8f617386633326ebb3a28c71459))
++
++# [1.6.0](https://github.com/robotnikz/Sunflow/compare/v1.5.0...v1.6.0) (2026-01-11)
++
++
++### Bug Fixes
++
++* **tests:** resolve typescript errors in test suite ([ffb5e89](https://github.com/robotnikz/Sunflow/commit/ffb5e89a5dd77d71b62aa9c69828d41f3b677c5f))
++
++
++### Features
++
++* **core:** enhance ROI accuracy, server performance and test coverage ([c19a480](https://github.com/robotnikz/Sunflow/commit/c19a480c43a5cc848a54b5953232d7f32274679c))
++
++# [1.5.0](https://github.com/robotnikz/Sunflow/compare/v1.4.0...v1.5.0) (2026-01-11)
++
++
++### Bug Fixes
++
++* **settings:** import missing getConfig in SettingsModal ([35c14c6](https://github.com/robotnikz/Sunflow/commit/35c14c6287fdb632be2cca1b625a4373200d068c))
++
++
++### Features
++
++* enhance history visualization, csv imports, and ROI simulation accuracy ([61e2194](https://github.com/robotnikz/Sunflow/commit/61e21947b67206a529ec664c5cc1cdd0d87d7881))
++
++# [1.4.0](https://github.com/robotnikz/Sunflow/compare/v1.3.6...v1.4.0) (2026-01-11)
++
++
++### Features
++
++* history graphs now show the current day, week, etc. Also added an option to go back in time on the graphs. ([857c5a4](https://github.com/robotnikz/Sunflow/commit/857c5a4082ed887b21fc485569dce74f1386d300))
++
++## [1.3.6](https://github.com/robotnikz/Sunflow/compare/v1.3.5...v1.3.6) (2026-01-11)
++
++
++### Bug Fixes
++
++* trigger release ([42f48dd](https://github.com/robotnikz/Sunflow/commit/42f48dd916d4757e58f0aa39c5c31d2d4120e6a6))
++
++## [1.3.5](https://github.com/robotnikz/Sunflow/compare/v1.3.4...v1.3.5) (2026-01-10)
++
++
++### Bug Fixes
++
++* added possible to enter mixed tariffs with different earnings. e.g up to 10kw and >10kw ([20ae93b](https://github.com/robotnikz/Sunflow/commit/20ae93baa74ff06d9cfea8ac471704adbc4fb8ea))
++* latest commit ([dffad23](https://github.com/robotnikz/Sunflow/commit/dffad233a53fe9addb005e33e2ab250cbe638720))
++
++## [1.3.4](https://github.com/robotnikz/Sunflow/compare/v1.3.3...v1.3.4) (2026-01-09)
++
++
++### Bug Fixes
++
++* battery widget charging animation changed from radar animation to a slight pulse ([7efcee1](https://github.com/robotnikz/Sunflow/commit/7efcee186cc3fe23e32dbed59a4cc950338debb3))
++
++## [1.3.3](https://github.com/robotnikz/Sunflow/compare/v1.3.2...v1.3.3) (2026-01-09)
++
++
++### Bug Fixes
++
++* changed Dockerfile to Debian:slim ([60f87e3](https://github.com/robotnikz/Sunflow/commit/60f87e3f0759c0851935831483576da7f225ec01))
++
++## [1.3.2](https://github.com/robotnikz/Sunflow/compare/v1.3.1...v1.3.2) (2026-01-09)
++
++
++### Bug Fixes
++
++* smart recommendation backend logic fixed for notifications ([77614f1](https://github.com/robotnikz/Sunflow/commit/77614f17721c5ebfd28d5b389a5a9250374332e5))
++
++## [1.3.1](https://github.com/robotnikz/Sunflow/compare/v1.3.0...v1.3.1) (2026-01-09)
++
++
++### Bug Fixes
++
++* **tests:** Resolve test suite failures and warnings ([7cb00c1](https://github.com/robotnikz/Sunflow/commit/7cb00c12ea06bdaa276914b58bdc399c9300565e))
++
++# [1.3.0](https://github.com/robotnikz/Sunflow/compare/v1.2.1...v1.3.0) (2026-01-09)
++
++
++### Features
++
++* added Battery Health widget and also notification option for Battery Health. You can define a threshold and amount of cycles before notified when battery health is low ([a95e40b](https://github.com/robotnikz/Sunflow/commit/a95e40b7131af2395b34573ac2f0709f2b350d76))
++
++## [1.2.1](https://github.com/robotnikz/Sunflow/compare/v1.2.0...v1.2.1) (2026-01-09)
++
++
++### Bug Fixes
++
++* refactoring ([81e5ff9](https://github.com/robotnikz/Sunflow/commit/81e5ff9444cb60ecf8d4ffebe07df1f5b6e50abb))
++
++# [1.2.0](https://github.com/robotnikz/Sunflow/compare/v1.1.0...v1.2.0) (2026-01-09)
++
++
++### Bug Fixes
++
++* fixed blurry fonts in history graphs ([a641396](https://github.com/robotnikz/Sunflow/commit/a641396b0ff694ea1e9fc0434690a004c757b1ec))
++* fixed forecast logic. ([f76399a](https://github.com/robotnikz/Sunflow/commit/f76399ab5e50d0d2cd2f70bd4b1ab14839088a00))
++* fixed some optical glitches in settings panel ([6714a8b](https://github.com/robotnikz/Sunflow/commit/6714a8b27dfa33bf9c9ba4a98856f0992b3f1e46))
++* fixed some widget bugs ([78bc499](https://github.com/robotnikz/Sunflow/commit/78bc499546b95180bb1ac0c0c142c94e804340d2))
++
++
++### Features
++
++* added option for discord notifications ([7d1cabd](https://github.com/robotnikz/Sunflow/commit/7d1cabd279c4dfbaf860dd50769e40dfad6770f3))
++
++# [1.1.0](https://github.com/robotnikz/Sunflow/compare/v1.0.3...v1.1.0) (2026-01-09)
++
++
++### Bug Fixes
++
++* added SOC charging to power history ([b023096](https://github.com/robotnikz/Sunflow/commit/b023096879c53aab9f23d4db5d659f6c91efc9b8))
++* battery charging/discharging in live power view ([d45106e](https://github.com/robotnikz/Sunflow/commit/d45106ed2a6b8704a95dc88a243c17ca7f745324))
++* fixed energy donuts visuals ([7f1ab17](https://github.com/robotnikz/Sunflow/commit/7f1ab17df6dbe4b1f0f80fd1f12fe4be189a6003))
++* improved break even calculation, added invested to date and estimated total cost at break even ([711d8c4](https://github.com/robotnikz/Sunflow/commit/711d8c44747fcc509c078ccb5fa6c65142339db0))
++* improved smart use logic, fallback to open-meteo for pv forecast in case solcast settings are missing or api limit reached. ([e8e232b](https://github.com/robotnikz/Sunflow/commit/e8e232b479f5eb7c3de70ebf1fafbe60d537f7e8))
++
++
++### Features
++
++* added option to export data as .csv ([ab9dc4b](https://github.com/robotnikz/Sunflow/commit/ab9dc4bf195a763f001d9342c55dee60b7e2b3f6))
++* added smart usage predictions, battery min 30% + rough >1h forecast to determine best usage time for your devices (testing stage) ([3e298fa](https://github.com/robotnikz/Sunflow/commit/3e298fa6c02c4f5675888cb37cadb046bba4a11f))
++* added solcast API in settings for forecast used in smart predictions ([de44743](https://github.com/robotnikz/Sunflow/commit/de44743f011d12351ba56afb6c9dbb5dc1cb4e58))
++
++## [1.0.3](https://github.com/robotnikz/Sunflow/compare/v1.0.2...v1.0.3) (2026-01-08)
++
++
++### Bug Fixes
++
++* delete buttons not working in settings ([c9887bf](https://github.com/robotnikz/Sunflow/commit/c9887bfd5dc1665f243dabf343472130b52ffc7b))
++
++## [1.0.2](https://github.com/robotnikz/Sunflow/compare/v1.0.1...v1.0.2) (2026-01-08)
++
++
++### Bug Fixes
++
++* fixed bugged hindering container to start ([5cdb37e](https://github.com/robotnikz/Sunflow/commit/5cdb37e1b7ca6790e8ed9ab827ae5e024b665e1e))
++
++## [1.0.1](https://github.com/robotnikz/Sunflow/compare/v1.0.0...v1.0.1) (2026-01-08)
++
++
++### Bug Fixes
++
++* fixed a bug where tarrifs could not be deleted ([e9451ca](https://github.com/robotnikz/Sunflow/commit/e9451ca4689b83611e692118a8f74a1df727cee6))
++
++# 1.0.0 (2026-01-08)
++
++
++### Bug Fixes
++
++* Adjust chart margins and spacing for better readability ([d92df61](https://github.com/robotnikz/Sunflow/commit/d92df6171dc68c1f1378396820799198fa1d7586))
++* **dashboard:** Adjust layout for better power flow display ([d55dbe9](https://github.com/robotnikz/Sunflow/commit/d55dbe9b87224dd8b5a1f50b003ad9fb05fc16e5))
++* **db:** Improve migration for status_code column ([72d2aff](https://github.com/robotnikz/Sunflow/commit/72d2affbf80ea4630b7c2391636210946deaf151))
++* docker ([1870bd2](https://github.com/robotnikz/Sunflow/commit/1870bd2b9544edae4e94137c666e7d74bf08d60e))
++* docker build ([42399b3](https://github.com/robotnikz/Sunflow/commit/42399b33d9f7032f1eee283540a3560ed2c2f7cc))
++* Dockerfile ([45d77ed](https://github.com/robotnikz/Sunflow/commit/45d77ed33d8406e1f29b763df25a8c295f557d7e))
++* Improve financial forecast calculation ([4793231](https://github.com/robotnikz/Sunflow/commit/4793231eab2427dfa1178704f65f8b414885794e))
++* **settings:** Improve financial return input styling ([13a61bd](https://github.com/robotnikz/Sunflow/commit/13a61bdf8e42de151eee19ce594f84412abeaaeb))
++* **SettingsModal:** Improve financial return input styling ([958fc84](https://github.com/robotnikz/Sunflow/commit/958fc84e2e71cfd6f8191ffd4dd128349d51604e))
++
++
++### Features
++
++* Add battery and efficiency charts ([3de494f](https://github.com/robotnikz/Sunflow/commit/3de494f4ba0f3a251288826cecb9240c4d604bed))
++* Add custom date range for history ([1dd3e1f](https://github.com/robotnikz/Sunflow/commit/1dd3e1fedd5bbbdfed2141576ededbdb5e1c360e))
++* Add degradation and inflation rates to config ([2f41c84](https://github.com/robotnikz/Sunflow/commit/2f41c848c2707a521673c62d6dd1758a7693d7d5))
++* Add hourly time range and database index ([818aa92](https://github.com/robotnikz/Sunflow/commit/818aa921aa0f5a9eb23bf6ec643021da58fd79d8))
++* Add initial values for historical data ([9991261](https://github.com/robotnikz/Sunflow/commit/99912610246e4d767e97eb2c66230ccbad5f9a85))
++* Add inverter status to history and display timeline ([614c38c](https://github.com/robotnikz/Sunflow/commit/614c38ccfc78a72eb0802d2bd8127feb49c7a7f1))
++* Add local timestamps and animations ([e4579af](https://github.com/robotnikz/Sunflow/commit/e4579afaa3b98b14de5740b32d8e63423736d63b))
++* Add location and weather support ([cda3a0c](https://github.com/robotnikz/Sunflow/commit/cda3a0cc7772af1654641c4f9c28c9b6a1f63ad2))
++* Add real-time autonomy and self-consumption metrics ([74c59f5](https://github.com/robotnikz/Sunflow/commit/74c59f5987327696af4f47fc4fd1c34f3e974b41))
++* Add system info and update checks ([fdcfd66](https://github.com/robotnikz/Sunflow/commit/fdcfd6617af0614f74389e125e135609ae4f995f))
++* Adjust component heights for better layout ([8927897](https://github.com/robotnikz/Sunflow/commit/89278979d91998260d522f59026aa9afa265fc7e))
++* **AmortizationWidget:** Improve break-even estimation ([cf9c5cc](https://github.com/robotnikz/Sunflow/commit/cf9c5cc67f75732d00f7d6fb45ce41bc0279984c))
++* Auto-refresh ROI data every minute ([7b5d1f8](https://github.com/robotnikz/Sunflow/commit/7b5d1f898d5ff783dd96828fb3054ace9e8e6edb))
++* Configure persistent data directory ([c6f467f](https://github.com/robotnikz/Sunflow/commit/c6f467f389c82b72fa8f6afa44fe5791d5ef1094))
++* Configure Vite for development server proxy ([16177d3](https://github.com/robotnikz/Sunflow/commit/16177d385b4b0d7365ac711d7171d2e04c9d99ac))
++* **dashboard:** Enhance stats and add CO2 calculation ([853ecb1](https://github.com/robotnikz/Sunflow/commit/853ecb1865c0eceee4c08b4d4161b8d711280cfe))
++* Display grid power flow in UI and data ([115ba07](https://github.com/robotnikz/Sunflow/commit/115ba07de4abca3437dd855fa82697a95d87104c))
++* Enhance financial calculations and UI ([1c1adb9](https://github.com/robotnikz/Sunflow/commit/1c1adb9b29d9a3deb5b7852d123610c26e42008b))
++* Enhance UI with custom font and layout adjustments ([e8c6ee9](https://github.com/robotnikz/Sunflow/commit/e8c6ee9d3011052a9d0ee4ccbca846bf06a66ab9))
++* Implement expense tracking for ROI calculation ([8e324c8](https://github.com/robotnikz/Sunflow/commit/8e324c8547870bb8a7e4b02aa893ae449267f19b))
++* Implement real-time energy history and stats ([625efb6](https://github.com/robotnikz/Sunflow/commit/625efb6a71d1eb06e3a9edb1601f0a2e3291ddf8))
++* Improve dashboard layout and chart aesthetics ([fcbb919](https://github.com/robotnikz/Sunflow/commit/fcbb919ee6f971e16816c5b2f1e365e22779020c))
++* Improve dashboard layout and sectioning ([c4f07eb](https://github.com/robotnikz/Sunflow/commit/c4f07eb356018d1514503ffce3b6fce039bd4ac8))
++* Improve Docker build and UI elements ([02f7929](https://github.com/robotnikz/Sunflow/commit/02f79295e71a3fee410aaea1b600a8fe96ab6c00))
++* Improve energy data aggregation ([235faad](https://github.com/robotnikz/Sunflow/commit/235faadc4a9c283481aab37c7d57ba107dc8a019))
++* Improve number input styling in settings ([3a1ef64](https://github.com/robotnikz/Sunflow/commit/3a1ef64adc89a7dca94b220d1ae24d87a7c3aff5))
++* Improve UI element spacing and layout ([3f6f425](https://github.com/robotnikz/Sunflow/commit/3f6f425b086d5883f88d9efcfd484a2d57b2a9a0))
++* Improve widget text styling ([d971060](https://github.com/robotnikz/Sunflow/commit/d971060aa5eb5f10cedd8989aeb2add8dd94bea5))
++* Initialize SolarSense Dashboard project ([5961265](https://github.com/robotnikz/Sunflow/commit/596126547dd786a53a19e46027c562f0237afef8))
++* Introduce dashboard refresh mechanism ([c469464](https://github.com/robotnikz/Sunflow/commit/c469464403396e9bcddfad4ed743c9dded5302ce))
++* Introduce dynamic tariff management ([19fbc30](https://github.com/robotnikz/Sunflow/commit/19fbc30435441a1ee9a700591b327a269b1202f0))
++* Introduce visual BatteryWidget ([de9f0d1](https://github.com/robotnikz/Sunflow/commit/de9f0d1c130fd97c02a9f48e7938d0d28eaa305e))
++* Migrate backend to ES Modules and add dependencies ([be88ab0](https://github.com/robotnikz/Sunflow/commit/be88ab0336151ebe36a2111165b4cc729292a921))
++* **powerflow:** Improve visual flow and layout ([942c19d](https://github.com/robotnikz/Sunflow/commit/942c19da0ddbfe675005ec95ee75edfa659881de))
++* Refactor PowerFlow component layout ([d8deb6c](https://github.com/robotnikz/Sunflow/commit/d8deb6c2c4b202480f674973189d08c3659d5d2c))
++* **server:** Calculate yearly recurring costs ([09bb6a4](https://github.com/robotnikz/Sunflow/commit/09bb6a448fb59c6afa37dab77514245a001f64bf))
++* **settings:** Add calibration tab and improve UI ([dc276d2](https://github.com/robotnikz/Sunflow/commit/dc276d28f4e4f84c98845137fdc0da98a5c5fa01))
++* **settings:** Improve historical data input guidance ([b6ab194](https://github.com/robotnikz/Sunflow/commit/b6ab19454f2807fe9cbe9e537be22334ea214626))
++* **StatusTimeline:** Simplify component logic and props ([b19aa13](https://github.com/robotnikz/Sunflow/commit/b19aa13a1d56823ddc08186ae44ce427e90bfd18))
++* Update module imports and Vite proxy configuration ([73284f3](https://github.com/robotnikz/Sunflow/commit/73284f3f4aff876c57e57bb1181c1894d2412482))
++
++# 1.0.0 (2026-01-08)
++
++
++### Bug Fixes
++
++* Adjust chart margins and spacing for better readability ([d92df61](https://github.com/robotnikz/Sunflow/commit/d92df6171dc68c1f1378396820799198fa1d7586))
++* **dashboard:** Adjust layout for better power flow display ([d55dbe9](https://github.com/robotnikz/Sunflow/commit/d55dbe9b87224dd8b5a1f50b003ad9fb05fc16e5))
++* **db:** Improve migration for status_code column ([72d2aff](https://github.com/robotnikz/Sunflow/commit/72d2affbf80ea4630b7c2391636210946deaf151))
++* docker ([1870bd2](https://github.com/robotnikz/Sunflow/commit/1870bd2b9544edae4e94137c666e7d74bf08d60e))
++* docker build ([42399b3](https://github.com/robotnikz/Sunflow/commit/42399b33d9f7032f1eee283540a3560ed2c2f7cc))
++* Improve financial forecast calculation ([4793231](https://github.com/robotnikz/Sunflow/commit/4793231eab2427dfa1178704f65f8b414885794e))
++* **settings:** Improve financial return input styling ([13a61bd](https://github.com/robotnikz/Sunflow/commit/13a61bdf8e42de151eee19ce594f84412abeaaeb))
++* **SettingsModal:** Improve financial return input styling ([958fc84](https://github.com/robotnikz/Sunflow/commit/958fc84e2e71cfd6f8191ffd4dd128349d51604e))
++
++
++### Features
++
++* Add battery and efficiency charts ([3de494f](https://github.com/robotnikz/Sunflow/commit/3de494f4ba0f3a251288826cecb9240c4d604bed))
++* Add custom date range for history ([1dd3e1f](https://github.com/robotnikz/Sunflow/commit/1dd3e1fedd5bbbdfed2141576ededbdb5e1c360e))
++* Add degradation and inflation rates to config ([2f41c84](https://github.com/robotnikz/Sunflow/commit/2f41c848c2707a521673c62d6dd1758a7693d7d5))
++* Add hourly time range and database index ([818aa92](https://github.com/robotnikz/Sunflow/commit/818aa921aa0f5a9eb23bf6ec643021da58fd79d8))
++* Add initial values for historical data ([9991261](https://github.com/robotnikz/Sunflow/commit/99912610246e4d767e97eb2c66230ccbad5f9a85))
++* Add inverter status to history and display timeline ([614c38c](https://github.com/robotnikz/Sunflow/commit/614c38ccfc78a72eb0802d2bd8127feb49c7a7f1))
++* Add local timestamps and animations ([e4579af](https://github.com/robotnikz/Sunflow/commit/e4579afaa3b98b14de5740b32d8e63423736d63b))
++* Add location and weather support ([cda3a0c](https://github.com/robotnikz/Sunflow/commit/cda3a0cc7772af1654641c4f9c28c9b6a1f63ad2))
++* Add real-time autonomy and self-consumption metrics ([74c59f5](https://github.com/robotnikz/Sunflow/commit/74c59f5987327696af4f47fc4fd1c34f3e974b41))
++* Add system info and update checks ([fdcfd66](https://github.com/robotnikz/Sunflow/commit/fdcfd6617af0614f74389e125e135609ae4f995f))
++* Adjust component heights for better layout ([8927897](https://github.com/robotnikz/Sunflow/commit/89278979d91998260d522f59026aa9afa265fc7e))
++* **AmortizationWidget:** Improve break-even estimation ([cf9c5cc](https://github.com/robotnikz/Sunflow/commit/cf9c5cc67f75732d00f7d6fb45ce41bc0279984c))
++* Auto-refresh ROI data every minute ([7b5d1f8](https://github.com/robotnikz/Sunflow/commit/7b5d1f898d5ff783dd96828fb3054ace9e8e6edb))
++* Configure persistent data directory ([c6f467f](https://github.com/robotnikz/Sunflow/commit/c6f467f389c82b72fa8f6afa44fe5791d5ef1094))
++* Configure Vite for development server proxy ([16177d3](https://github.com/robotnikz/Sunflow/commit/16177d385b4b0d7365ac711d7171d2e04c9d99ac))
++* **dashboard:** Enhance stats and add CO2 calculation ([853ecb1](https://github.com/robotnikz/Sunflow/commit/853ecb1865c0eceee4c08b4d4161b8d711280cfe))
++* Display grid power flow in UI and data ([115ba07](https://github.com/robotnikz/Sunflow/commit/115ba07de4abca3437dd855fa82697a95d87104c))
++* Enhance financial calculations and UI ([1c1adb9](https://github.com/robotnikz/Sunflow/commit/1c1adb9b29d9a3deb5b7852d123610c26e42008b))
++* Enhance UI with custom font and layout adjustments ([e8c6ee9](https://github.com/robotnikz/Sunflow/commit/e8c6ee9d3011052a9d0ee4ccbca846bf06a66ab9))
++* Implement expense tracking for ROI calculation ([8e324c8](https://github.com/robotnikz/Sunflow/commit/8e324c8547870bb8a7e4b02aa893ae449267f19b))
++* Implement real-time energy history and stats ([625efb6](https://github.com/robotnikz/Sunflow/commit/625efb6a71d1eb06e3a9edb1601f0a2e3291ddf8))
++* Improve dashboard layout and chart aesthetics ([fcbb919](https://github.com/robotnikz/Sunflow/commit/fcbb919ee6f971e16816c5b2f1e365e22779020c))
++* Improve dashboard layout and sectioning ([c4f07eb](https://github.com/robotnikz/Sunflow/commit/c4f07eb356018d1514503ffce3b6fce039bd4ac8))
++* Improve Docker build and UI elements ([02f7929](https://github.com/robotnikz/Sunflow/commit/02f79295e71a3fee410aaea1b600a8fe96ab6c00))
++* Improve energy data aggregation ([235faad](https://github.com/robotnikz/Sunflow/commit/235faadc4a9c283481aab37c7d57ba107dc8a019))
++* Improve number input styling in settings ([3a1ef64](https://github.com/robotnikz/Sunflow/commit/3a1ef64adc89a7dca94b220d1ae24d87a7c3aff5))
++* Improve UI element spacing and layout ([3f6f425](https://github.com/robotnikz/Sunflow/commit/3f6f425b086d5883f88d9efcfd484a2d57b2a9a0))
++* Improve widget text styling ([d971060](https://github.com/robotnikz/Sunflow/commit/d971060aa5eb5f10cedd8989aeb2add8dd94bea5))
++* Initialize SolarSense Dashboard project ([5961265](https://github.com/robotnikz/Sunflow/commit/596126547dd786a53a19e46027c562f0237afef8))
++* Introduce dashboard refresh mechanism ([c469464](https://github.com/robotnikz/Sunflow/commit/c469464403396e9bcddfad4ed743c9dded5302ce))
++* Introduce dynamic tariff management ([19fbc30](https://github.com/robotnikz/Sunflow/commit/19fbc30435441a1ee9a700591b327a269b1202f0))
++* Introduce visual BatteryWidget ([de9f0d1](https://github.com/robotnikz/Sunflow/commit/de9f0d1c130fd97c02a9f48e7938d0d28eaa305e))
++* Migrate backend to ES Modules and add dependencies ([be88ab0](https://github.com/robotnikz/Sunflow/commit/be88ab0336151ebe36a2111165b4cc729292a921))
++* **powerflow:** Improve visual flow and layout ([942c19d](https://github.com/robotnikz/Sunflow/commit/942c19da0ddbfe675005ec95ee75edfa659881de))
++* Refactor PowerFlow component layout ([d8deb6c](https://github.com/robotnikz/Sunflow/commit/d8deb6c2c4b202480f674973189d08c3659d5d2c))
++* **server:** Calculate yearly recurring costs ([09bb6a4](https://github.com/robotnikz/Sunflow/commit/09bb6a448fb59c6afa37dab77514245a001f64bf))
++* **settings:** Add calibration tab and improve UI ([dc276d2](https://github.com/robotnikz/Sunflow/commit/dc276d28f4e4f84c98845137fdc0da98a5c5fa01))
++* **settings:** Improve historical data input guidance ([b6ab194](https://github.com/robotnikz/Sunflow/commit/b6ab19454f2807fe9cbe9e537be22334ea214626))
++* **StatusTimeline:** Simplify component logic and props ([b19aa13](https://github.com/robotnikz/Sunflow/commit/b19aa13a1d56823ddc08186ae44ce427e90bfd18))
++* Update module imports and Vite proxy configuration ([73284f3](https://github.com/robotnikz/Sunflow/commit/73284f3f4aff876c57e57bb1181c1894d2412482))
+diff --git a/sunflow/sunflow/docs/OPERATIONS.md b/sunflow/sunflow/docs/OPERATIONS.md
+new file mode 100644
+index 0000000..f00265e
+--- /dev/null
++++ b/sunflow/sunflow/docs/OPERATIONS.md
+@@ -0,0 +1,182 @@
++# SunFlow Operations Runbook
++
++This document focuses on day-2 operations: backups, upgrades, rollbacks, and basic troubleshooting.
++
++## Recommended deployment defaults
++
++- Pin production deployments to a version tag (or digest), not only `:latest`.
++- Persist data via a bind mount (`./sunflow-data:/app/data`).
++- If exposed beyond your LAN, use a reverse proxy with TLS and authentication.
++
++## Data persistence layout
++
++SunFlow stores state in the directory configured as `DATA_DIR` (Docker image default: `/app/data`).
++
++Typical files:
++
++- `config.json` (runtime configuration)
++- `solar_data.db` (SQLite database)
++- `uploads/` (temporary upload files)
++
++If you see `SQLITE_READONLY: attempt to write a readonly database`, the container user likely cannot write to your bind-mounted data directory (common after upgrading from an older image that ran as root). Fix the host folder permissions/attributes, then restart the container.
++
++## Backup & restore
++
++### Backup (Docker Compose)
++
++SunFlow stores its data in the `./sunflow-data/` folder next to your `docker-compose.yml` (mounted to `/app/data` in the container).
++
++#### Backup
++
++1. Stop the container (recommended to avoid copying a changing DB):
++
++   - `docker compose stop`
++
++2. Copy the entire data directory:
++
++   - `cp -r ./sunflow-data ./sunflow-data.backup-YYYYMMDD`
++
++3. Start the container again:
++
++   - `docker compose start`
++
++### Restore (Docker Compose)
++
++#### Restore
++
++1. Stop the container:
++
++   - `docker compose stop`
++
++2. Replace the data directory with a backup:
++
++   - `rm -rf ./sunflow-data`
++   - `cp -r ./sunflow-data.backup-YYYYMMDD ./sunflow-data`
++
++3. Start the container:
++
++   - `docker compose start`
++
++Notes:
++
++- If you use filesystem snapshots (NAS), prefer snapshots over file copies.
++- If you must back up while running, copy the whole directory and validate the DB on restore.
++
++## Upgrade & rollback
++
++### Upgrade
++
++Upgrade keeps your DB/history as long as you keep your `./sunflow-data/` folder and the mount `./sunflow-data:/app/data` unchanged.
++
++1. Update the image tag in `docker-compose.yml`.
++
++   Example:
++
++   - `ghcr.io/robotnikz/sunflow:1.11.0`
++
++2. Pull and restart:
++
++   - `docker compose pull`
++   - `docker compose up -d`
++
++### Rollback
++
++1. Switch the image tag back to the last known-good version.
++2. Pull and restart:
++
++   - `docker compose pull`
++   - `docker compose up -d`
++
++## Health checks & monitoring
++
++### Container health
++
++The official image includes a Docker `HEALTHCHECK` against `GET /api/info`.
++
++Check status:
++
++- `docker ps` (look for `healthy`)
++- `docker inspect sunflow --format '{{json .State.Health}}'`
++
++### Logs
++
++- `docker logs -f sunflow`
++
++### Basic resource monitoring
++
++- CPU/memory: `docker stats sunflow`
++- Disk usage:
++   - monitor the `sunflow-data/` directory growth over time
++
++## Reverse proxy notes
++
++If you run SunFlow behind a reverse proxy (nginx, Traefik, Caddy):
++
++- Set `TRUST_PROXY=1` so rate limiting and IP logic behave correctly.
++- Avoid exposing the raw container port publicly without auth.
++
++## Common failure modes
++
++### 1) UI loads but charts are empty
++
++- Verify the data directory is mounted correctly (`./sunflow-data:/app/data`).
++- Check logs for SQLite errors.
++
++### 2) Forecast fails
++
++- Ensure Solcast is configured.
++- Nighttime behavior is expected to skip Solcast calls.
++
++### 3) CSV import fails
++
++- Verify upload size limits (`UPLOAD_MAX_BYTES`).
++- Check logs for validation errors.
++
++## Stability exercises (manual)
++
++- Restart/resume: run a soak test (see [CONTRIBUTING.md](CONTRIBUTING.md)) and execute `docker compose restart` during the run.
++- Network outage: temporarily block inverter access and confirm the process stays alive and the UI remains usable.
++
++## 24h stability checklist (manual)
++
++This is a practical long-run validation to catch leaks, unhandled errors, and “slow degradation” issues.
++
++### Before you start
++
++- Use a persistent bind mount (`./sunflow-data:/app/data`).
++- Ensure the container is healthy:
++   - `docker ps` (should show `healthy`)
++   - `docker logs --tail 200 sunflow` (no crash loop)
++
++### Run
++
++1. Start the container:
++
++    - `docker compose up -d`
++
++2. Start a lightweight soak against the running service:
++
++   - Run the soak test script (see [CONTRIBUTING.md](CONTRIBUTING.md)).
++
++3. During the 24h period, perform these exercises:
++
++    - Restart/resume: `docker compose restart`
++    - Stop/start: `docker compose stop` then `docker compose start`
++    - Network outage simulation: make the inverter IP unreachable for ~5-10 minutes (router rule / firewall), then restore connectivity
++
++### What to monitor
++
++- Health status stays `healthy` (no flapping).
++- Logs:
++   - no repeated unhandled exceptions
++   - no repeated DB “busy/locked” errors
++- Resource usage:
++   - `docker stats sunflow` (CPU/memory does not grow without bound)
++- Disk:
++   - data directory growth is plausible for your retention settings
++
++### Expected outcome
++
++- No sustained 5xx responses during normal operation.
++- After restart or network outage, the service recovers without manual intervention.
++- UI stays usable (even if live data temporarily fails).
+diff --git a/sunflow/sunflow/docs/TESTPLAN.md b/sunflow/sunflow/docs/TESTPLAN.md
+new file mode 100644
+index 0000000..cf9f839
+--- /dev/null
++++ b/sunflow/sunflow/docs/TESTPLAN.md
+@@ -0,0 +1,133 @@
++# Test Plan (SunFlow)
++
++Status: Work in progress (Branch: `audit-2026-01-15-security-hardening`) — focus: regression safety + operational scenarios.
++
++## 1) Functional Tests (What should the software do?)
++
++Goal: Verify the application meets its requirements (“does the system do exactly what is specified?”).
++
++### Core features / business logic (use cases)
++
++| Area | Use case | Expectation | Automated? |
++|---|---|---|---|
++| Config | Read/write config | GET returns defaults, POST persists, validation enforced | partially |
++| Realtime | Fetch live data | Missing IP -> error; with IP -> stable data model | partially |
++| Forecast | Solcast forecast | Cached during daytime, no Solcast calls at night, meaningful errors | partially |
++| Tariffs | CRUD | Validation, at least 1 tariff remains, correct status codes | yes |
++| Expenses | CRUD | Validation, correct status codes | yes |
++| CSV Import | Preview/import | Preview returns headers+preview; import writes DB; tmp cleanup; clean error paths | yes |
++| Notifications | Test notification | Only allowed Discord webhooks; robust error handling | yes |
++| Update Check | /api/info | No network dependency in tests; latestVersion/updateAvailable set | yes |
++
++### Edge cases
++- Empty inputs (e.g. missing/invalid `mapping`)
++- Limits (upload size, JSON body limit)
++- Invalid data (IDs, dates, negative values outside allowed ranges)
++
++### Error handling
++- Every API returns consistent JSON errors and appropriate status codes.
++
++### Authorization / roles
++- Optional: `SUNFLOW_ADMIN_TOKEN` enables admin-only behavior for mutating endpoints.
++
++## 2) Unit Tests
++
++Goal: Test isolated logic (fast, CI-friendly).
++
++- `services/api.ts`: query string building, error paths for `!res.ok`, parsing.
++
++## 3) Integration Tests
++
++Goal: Validate component interaction.
++
++- Backend ↔ SQLite (temporary data dir)
++- Backend ↔ external APIs via mocks (axios)
++
++## 4) System Tests / E2E
++
++Goal: Validate UI ↔ backend as a whole.
++
++- Playwright smoke: app loads, dashboard visible, settings open.
++- Playwright regression: settings persistence + critical UX guards.
++- Playwright mocked broad coverage: deterministic UI coverage with mocked `/api/*` and Open‑Meteo (runs without inverter/external network).
++
++Notes:
++- The mocked E2E suite uses Playwright request interception and synthetic fixtures only (no secrets, no real production data).
++- This keeps the repo CI/public-friendly while still providing high confidence UI coverage.
++
++## 5) Non-functional Tests
++
++### a) Performance & load
++- Manual/optional automated load with `autocannon` against `/api/info` and `/api/history`.
++
++### b) Stability & reliability
++- Long-run (24h): polling, retention, restart/resume, DB file growth.
++
 +- Soak (lightweight, automatable): run the soak test script (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
- 	- Expected: no 5xx, no timeouts, stable status codes.
- 	- For Docker: start the container via Compose, then run the soak test against the published port.
- 	- Optional: restart the container during the soak and verify the service recovers cleanly.
- 
--For a concrete 24h checklist (restart/resume, outage simulation, what to monitor), see `OPERATIONS.md`.
++	- Expected: no 5xx, no timeouts, stable status codes.
++	- For Docker: start the container via Compose, then run the soak test against the published port.
++	- Optional: restart the container during the soak and verify the service recovers cleanly.
++
 +For a concrete 24h checklist (restart/resume, outage simulation, what to monitor), see [OPERATIONS.md](OPERATIONS.md).
- 
- ### c) Security
- - AuthN/Z: admin token enforced
-@@ -76,13 +76,13 @@ For a concrete 24h checklist (restart/resume, outage simulation, what to monitor
- - Secrets: redaction when admin token is enabled
- - Automated regressions: see `tests/api.security.regression.test.ts` (CORS allowlist + webhook SSRF guard).
- 
--Manual self-hosting checklist: `SECURITY_CHECKLIST.md`.
++
++### c) Security
++- AuthN/Z: admin token enforced
++- Input validation: invalid bodies/IDs
++- Secrets: redaction when admin token is enabled
++- Automated regressions: see `tests/api.security.regression.test.ts` (CORS allowlist + webhook SSRF guard).
++
 +Manual self-hosting checklist: [SECURITY.md](../SECURITY.md).
- 
- ## 6) Usability & UX
- 
- - Clear copy, consistent validation, actionable error messages.
- 
--Checklist: `UX_CHECKLIST.md`.
++
++## 6) Usability & UX
++
++- Clear copy, consistent validation, actionable error messages.
++
 +Checklist: [UX_CHECKLIST.md](UX_CHECKLIST.md).
- 
- ## 7) Compatibility & environment
- 
-@@ -112,7 +112,7 @@ Note: E2E can run nightly to reduce CI flakiness impact.
- 	- Rollback: switch back to the previous tag and restart.
- 
- - DB persisted via bind mount (Docker Compose default): `./sunflow-data:/app/data`
--	- Backup: stop container, then copy the `sunflow-data/` directory (see `OPERATIONS.md`).
++
++## 7) Compatibility & environment
++
++- Browser (E2E): Chromium/Firefox/WebKit (via Playwright)
++- OS: Linux (recommended for self-hosting and CI-like parity)
++- Node.js: tested via `package.json`; recommended: LTS (e.g. Node 20/22)
++- Deployment: Docker, reverse proxy (TRUST_PROXY)
++- Storage: SQLite DB persisted in `./sunflow-data/` (bind mount to `/app/data`)
++
++## 8) Regression
++
++Goal: Catch regressions early without slowing CI unnecessarily.
++
++Recommended pipeline (documentation; may differ from current CI implementation):
++
++- On every PR/push: run the standard checks (see [CONTRIBUTING.md](CONTRIBUTING.md))
++- Optional/nightly: run E2E (Playwright)
++- Release: same as PR/push, plus container build/publish
++
++Note: E2E can run nightly to reduce CI flakiness impact.
++
++## 9) Deployment & operations scenarios
++
++- Update/rollback via image tags (pinning recommended)
++	- Recommendation: pin production deployments to a version tag (`ghcr.io/robotnikz/sunflow:<version>`), not only `latest`.
++	- Update: change the tag and restart the container.
++	- Rollback: switch back to the previous tag and restart.
++
++- DB persisted via bind mount (Docker Compose default): `./sunflow-data:/app/data`
 +	- Backup: stop container, then copy the `sunflow-data/` directory (see [OPERATIONS.md](OPERATIONS.md)).
- 	- Monitoring: DB growth, CPU/RAM (especially during long polling/soak)
- 
- Manual ops scenarios (short):
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/UX_CHECKLIST.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/UX_CHECKLIST.md"
-similarity index 100%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/UX_CHECKLIST.md"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/UX_CHECKLIST.md"
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.html" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.html"
++	- Monitoring: DB growth, CPU/RAM (especially during long polling/soak)
++
++Manual ops scenarios (short):
++- Restart/resume: restart the container while a soak test is running
++- Network outage: inverter IP temporarily unreachable → API must not crash; UI should remain usable
++
++For a practical runbook (backup/restore, upgrades/rollbacks, monitoring), see `OPERATIONS.md`.
++
++## 10) Docs & tests
++
++- README/setup/examples must stay consistent with current behavior.
++- References:
++	- Security: `AUDIT.md`
++	- How to run tests: see [CONTRIBUTING.md](CONTRIBUTING.md)
++
++## How to run
++
++See [CONTRIBUTING.md](CONTRIBUTING.md) for the exact commands (tests, Playwright, load/soak scripts).
+diff --git a/sunflow/sunflow/docs/UX_CHECKLIST.md b/sunflow/sunflow/docs/UX_CHECKLIST.md
+new file mode 100644
+index 0000000..2750a94
+--- /dev/null
++++ b/sunflow/sunflow/docs/UX_CHECKLIST.md
+@@ -0,0 +1,31 @@
++# SunFlow Usability & UX Checklist
++
++This checklist is meant for quick manual validation after changes or upgrades.
++
++## Accessibility & keyboard
++
++- Settings can be opened/closed without a mouse (keyboard reachable controls).
++- Modal close works via the close button and `Escape`.
++- Important controls have accessible names (buttons, toggles, inputs).
++- Tab-like navigation in Settings is clearly labeled and reachable.
++
++## Clarity & error messages
++
++- Error messages are actionable (what happened + what to do next).
++- Empty states explain what to configure (e.g., fresh install opens Settings).
++- Copy is consistent (units, currency, dates).
++
++## Responsiveness
++
++- Dashboard and Settings remain usable on smaller screens.
++- Settings tabs remain reachable on narrow widths (horizontal scroll is acceptable).
++
++## Performance perception
++
++- Loading states appear quickly when data is missing/slow.
++- The UI remains responsive while backend polling is active.
++
++## Regression smoke (recommended)
++
++- Run the Playwright smoke suite (see [CONTRIBUTING.md](CONTRIBUTING.md)).
++- Open Settings, switch to Notifications, verify toggle is reachable and labeled.
+diff --git a/sunflow/sunflow/entrypoint.sh b/sunflow/sunflow/entrypoint.sh
+deleted file mode 100644
+index 2c31be8..0000000
+--- a/sunflow/sunflow/entrypoint.sh
++++ /dev/null
+@@ -1,24 +0,0 @@
+-#!/bin/sh
+-set -eu
+-
+-# Ensure data dir exists (volume or bind mount)
+-mkdir -p /app/data
+-
+-# If running as root, try to ensure the runtime user can write.
+-# - Named volumes are typically initialized from the image (permissions preserved)
+-# - Bind mounts may require chown/chmod; on some platforms/filesystems this can fail
+-if [ "$(id -u)" = "0" ]; then
+-  chown -R node:node /app/data 2>/dev/null || true
+-  chmod -R u+rwX /app/data 2>/dev/null || true
+-
+-  # Run the app as the non-root node user
+-  if command -v gosu >/dev/null 2>&1; then
+-    exec gosu node node server.js
+-  fi
+-
+-  # Fallback (older images): use `su` if available.
+-  exec su node -s /bin/sh -c "exec node server.js"
+-fi
+-
+-# Already non-root
+-exec node server.js
+diff --git a/sunflow/sunflow/index.html b/sunflow/sunflow/index.html
 index e2215d9..5d1052c 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.html"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.html"
+--- a/sunflow/sunflow/index.html
++++ b/sunflow/sunflow/index.html
 @@ -5,53 +5,10 @@
      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
      <title>SunFlow Monitor</title>
@@ -693,10 +2583,10 @@ index e2215d9..5d1052c 100644
 -</html>
 \ No newline at end of file
 +</html>
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.tsx"
+diff --git a/sunflow/sunflow/index.tsx b/sunflow/sunflow/index.tsx
 index 6ca5361..2b59bbe 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.tsx"
+--- a/sunflow/sunflow/index.tsx
++++ b/sunflow/sunflow/index.tsx
 @@ -1,6 +1,7 @@
  import React from 'react';
  import ReactDOM from 'react-dom/client';
@@ -705,10 +2595,10 @@ index 6ca5361..2b59bbe 100644
  
  const rootElement = document.getElementById('root');
  if (!rootElement) {
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package-lock.json" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package-lock.json"
+diff --git a/sunflow/sunflow/package-lock.json b/sunflow/sunflow/package-lock.json
 index fc86a51..739500d 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package-lock.json"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package-lock.json"
+--- a/sunflow/sunflow/package-lock.json
++++ b/sunflow/sunflow/package-lock.json
 @@ -1,12 +1,12 @@
  {
    "name": "sunflow-dashboard",
@@ -1361,10 +3251,10 @@ index fc86a51..739500d 100644
      "node_modules/tar": {
        "version": "6.2.1",
        "resolved": "https://registry.npmjs.org/tar/-/tar-6.2.1.tgz",
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package.json" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package.json"
+diff --git a/sunflow/sunflow/package.json b/sunflow/sunflow/package.json
 index 0b39da0..38159d4 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package.json"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package.json"
+--- a/sunflow/sunflow/package.json
++++ b/sunflow/sunflow/package.json
 @@ -16,6 +16,7 @@
      "preview": "vite preview",
      "test": "vitest",
@@ -1408,14 +3298,27 @@ index 0b39da0..38159d4 100644
            ],
            "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
          }
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/check_db.js" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/scripts/check_db.js"
-similarity index 100%
-rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/check_db.js"
-rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/scripts/check_db.js"
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/server.js" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/server.js"
+diff --git a/sunflow/sunflow/scripts/check_db.js b/sunflow/sunflow/scripts/check_db.js
+new file mode 100644
+index 0000000..05a77ce
+--- /dev/null
++++ b/sunflow/sunflow/scripts/check_db.js
+@@ -0,0 +1,11 @@
++import sqlite3 from 'sqlite3';
++const db = new sqlite3.Database('sunflow-data/solar_data.db');
++db.all('PRAGMA table_info(energy_data)', (err, rows) => {
++    if (err) console.error(err);
++    console.log('TABLE INFO:', JSON.stringify(rows, null, 2));
++    db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='energy_data'", (err, row) => {
++        if (err) console.error(err);
++        console.log('SQL:', row ? row.sql : 'NOT FOUND');
++        db.close();
++    });
++});
+diff --git a/sunflow/sunflow/server.js b/sunflow/sunflow/server.js
 index 449ddce..c410449 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/server.js"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/server.js"
+--- a/sunflow/sunflow/server.js
++++ b/sunflow/sunflow/server.js
 @@ -74,10 +74,15 @@ const resolveSafeDataDir = (maybeDir) => {
          return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
      };
@@ -1490,10 +3393,10 @@ index 449ddce..c410449 100644
              }
  
              getHourlyGridEnergyKwh(startTs, endTs, (eErr, hours) => {
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/services/api.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/services/api.ts"
+diff --git a/sunflow/sunflow/services/api.ts b/sunflow/sunflow/services/api.ts
 index 7862591..6613604 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/services/api.ts"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/services/api.ts"
+--- a/sunflow/sunflow/services/api.ts
++++ b/sunflow/sunflow/services/api.ts
 @@ -1,81 +1,208 @@
  
  import { InverterData, SystemConfig, HistoryData, TimeRange, Tariff, Expense, RoiData, SystemInfo, ForecastData, BatteryHealthData, SimulationDataPoint, AwattarComparisonResponse, AwattarComparePeriod } from '../types';
@@ -1612,7 +3515,7 @@ index 7862591..6613604 100644
 +  }
 +
 +  // Fall back to a short snippet of text/HTML.
-+  return trimmed.length > 200 ? trimmed.slice(0, 200) + 'ÔÇª' : trimmed;
++  return trimmed.length > 200 ? trimmed.slice(0, 200) + '…' : trimmed;
 +};
  
  export const getRealtimeData = async (): Promise<InverterData> => {
@@ -1778,11 +3681,11 @@ index 7862591..6613604 100644
    if (!res.ok) {
      let msg = 'Failed to fetch aWATTar comparison';
      try {
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/styles.css" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/styles.css"
+diff --git a/sunflow/sunflow/styles.css b/sunflow/sunflow/styles.css
 new file mode 100644
 index 0000000..996194e
 --- /dev/null
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/styles.css"
++++ b/sunflow/sunflow/styles.css
 @@ -0,0 +1,51 @@
 +@import "tailwindcss";
 +@import "@fontsource/inter/latin.css";
@@ -1835,11 +3738,11 @@ index 0000000..996194e
 +.animate-fade-in {
 +  animation: fade-in 0.5s ease-out forwards;
 +}
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tailwind.config.js" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tailwind.config.js"
+diff --git a/sunflow/sunflow/tailwind.config.js b/sunflow/sunflow/tailwind.config.js
 new file mode 100644
 index 0000000..a6b2748
 --- /dev/null
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tailwind.config.js"
++++ b/sunflow/sunflow/tailwind.config.js
 @@ -0,0 +1,11 @@
 +/** @type {import('tailwindcss').Config} */
 +export default {
@@ -1852,10 +3755,10 @@ index 0000000..a6b2748
 +  },
 +  plugins: [],
 +};
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/AmortizationWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/AmortizationWidget.test.tsx"
+diff --git a/sunflow/sunflow/tests/AmortizationWidget.test.tsx b/sunflow/sunflow/tests/AmortizationWidget.test.tsx
 index 91cac06..121c305 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/AmortizationWidget.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/AmortizationWidget.test.tsx"
+--- a/sunflow/sunflow/tests/AmortizationWidget.test.tsx
++++ b/sunflow/sunflow/tests/AmortizationWidget.test.tsx
 @@ -5,13 +5,13 @@ import AmortizationWidget from '../components/AmortizationWidget';
  import React from 'react';
  
@@ -1881,10 +3784,10 @@ index 91cac06..121c305 100644
          const mockRoi = {
              totalInvested: 10000,
              totalReturned: 12000,
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/App.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/App.test.tsx"
+diff --git a/sunflow/sunflow/tests/App.test.tsx b/sunflow/sunflow/tests/App.test.tsx
 index fa7f060..ca3e97d 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/App.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/App.test.tsx"
+--- a/sunflow/sunflow/tests/App.test.tsx
++++ b/sunflow/sunflow/tests/App.test.tsx
 @@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
  import App from '../App';
  import * as api from '../services/api';
@@ -1899,7 +3802,7 @@ index fa7f060..ca3e97d 100644
    });
  
 -  it('zeigt den Ladebildschirm beim Start', async () => {
--    // Wir lassen die Promises ungel├Âst oder l├Âsen sie langsam auf,
+-    // Wir lassen die Promises ungelöst oder lösen sie langsam auf,
 -    // um den initialen Zustand zu sehen
 +  it('shows the loading screen on startup', async () => {
 +    // Resolve promises (or resolve slowly) to observe the initial state
@@ -1908,13 +3811,13 @@ index fa7f060..ca3e97d 100644
  
      render(<App />);
      
--    // Pr├╝fen auf Text, der nur im Ladezustand da ist
+-    // Prüfen auf Text, der nur im Ladezustand da ist
 +    // Check for text that appears only in the loading state
      expect(await screen.findByText(/Connecting to Fronius Inverter/i)).toBeInTheDocument();
    });
  
--  it('l├ñdt das Dashboard, wenn Konfiguration vorhanden ist', async () => {
--    // 2. Wir definieren Test-Daten, die die API zur├╝ckgeben soll
+-  it('lädt das Dashboard, wenn Konfiguration vorhanden ist', async () => {
+-    // 2. Wir definieren Test-Daten, die die API zurückgeben soll
 +  it('loads the dashboard when configuration is present', async () => {
 +    // Define test data that the API should return
      const mockConfig = { 
@@ -1930,7 +3833,7 @@ index fa7f060..ca3e97d 100644
      (api.getSystemInfo as any).mockResolvedValue({ version: '1.0.0', updateAvailable: false });
      (api.getRealtimeData as any).mockResolvedValue(mockRealtimeData);
      
--    // Leere Dummies f├╝r die Charts, damit nichts crasht
+-    // Leere Dummies für die Charts, damit nichts crasht
 +    // Empty chart dummies so nothing crashes
      (api.getHistory as any).mockResolvedValue({ chart: [], stats: { production: 0, consumption: 0, imported: 0, exported: 0, costSaved: 0, earnings: 0 } });
      (api.getRoiData as any).mockResolvedValue({ totalInvested: 0, roiPercent: 0 });
@@ -1944,16 +3847,16 @@ index fa7f060..ca3e97d 100644
          expect(screen.getByText(/SunFlow/i)).toBeInTheDocument();
      });
  
--    // Pr├╝fen, ob der Settings-Button gerendert wurde (Teil des Dashboards)
+-    // Prüfen, ob der Settings-Button gerendert wurde (Teil des Dashboards)
 +    // Verify the Settings button is rendered (part of the dashboard)
      expect(screen.getByTitle(/Settings/i)).toBeInTheDocument();
    });
  });
 \ No newline at end of file
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryHealthWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryHealthWidget.test.tsx"
+diff --git a/sunflow/sunflow/tests/BatteryHealthWidget.test.tsx b/sunflow/sunflow/tests/BatteryHealthWidget.test.tsx
 index e6ead3a..2f93811 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryHealthWidget.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryHealthWidget.test.tsx"
+--- a/sunflow/sunflow/tests/BatteryHealthWidget.test.tsx
++++ b/sunflow/sunflow/tests/BatteryHealthWidget.test.tsx
 @@ -24,12 +24,12 @@ vi.mock('recharts', async () => {
  describe('BatteryHealthWidget', () => {
    const nominalCapacity = 10; // 10 kWh
@@ -1987,10 +3890,10 @@ index e6ead3a..2f93811 100644
      const mockData: BatteryHealthData = {
          dataPoints: [{ date: '2023-01-01', efficiency: 80, estimatedCapacity: 6.0, chargeCycles: 1 }],
          averageEfficiency: 80,
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryWidget.test.tsx"
+diff --git a/sunflow/sunflow/tests/BatteryWidget.test.tsx b/sunflow/sunflow/tests/BatteryWidget.test.tsx
 index 5a6641b..d377a3a 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryWidget.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryWidget.test.tsx"
+--- a/sunflow/sunflow/tests/BatteryWidget.test.tsx
++++ b/sunflow/sunflow/tests/BatteryWidget.test.tsx
 @@ -8,13 +8,13 @@ import React from 'react';
  import { Battery } from 'lucide-react';
  
@@ -2023,10 +3926,10 @@ index 5a6641b..d377a3a 100644
          render(<BatteryWidget soc={0} power={0} state="idle" capacity={10} />);
          expect(screen.getByText(/0/)).toBeInTheDocument();
      });
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Charts.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Charts.test.tsx"
+diff --git a/sunflow/sunflow/tests/Charts.test.tsx b/sunflow/sunflow/tests/Charts.test.tsx
 index 915eb28..c7d5cf8 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Charts.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Charts.test.tsx"
+--- a/sunflow/sunflow/tests/Charts.test.tsx
++++ b/sunflow/sunflow/tests/Charts.test.tsx
 @@ -23,11 +23,11 @@ describe('Chart Components', () => {
          { timestamp: '2023-01-01 13:00', production: 1200, consumption: 600, grid: -600, battery: 0 }
      ];
@@ -2050,10 +3953,10 @@ index 915eb28..c7d5cf8 100644
           // Fix: EfficiencyChart expects history prop based on failure 'history.length'
           // Assuming it takes same shape as others or likely the dataPoints array directly?
           // Let's assume it takes 'history' prop which is the array.
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/CsvImporter.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/CsvImporter.test.tsx"
+diff --git a/sunflow/sunflow/tests/CsvImporter.test.tsx b/sunflow/sunflow/tests/CsvImporter.test.tsx
 index 317b8d6..f7039a5 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/CsvImporter.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/CsvImporter.test.tsx"
+--- a/sunflow/sunflow/tests/CsvImporter.test.tsx
++++ b/sunflow/sunflow/tests/CsvImporter.test.tsx
 @@ -32,12 +32,12 @@ describe('CsvImporter Component', () => {
          vi.clearAllMocks();
      });
@@ -2086,7 +3989,7 @@ index 317b8d6..f7039a5 100644
          }
      });
  
--    it('f├╝hrt Import aus wenn Mapping gesetzt ist', async () => {
+-    it('führt Import aus wenn Mapping gesetzt ist', async () => {
 +    it('runs import when mapping is set', async () => {
          // Mock API Response
          vi.mocked(api.previewCsv).mockResolvedValue({
@@ -2099,7 +4002,7 @@ index 317b8d6..f7039a5 100644
 +        // Set mapping (select Timestamp)
          const selects = screen.getAllByRole('combobox');
          
--        // Wir m├╝ssen sicherstellen, dass die Optionen auch geladen sind (aus Meta fields des Mocks)
+-        // Wir müssen sicherstellen, dass die Optionen auch geladen sind (aus Meta fields des Mocks)
 +        // Ensure options are loaded (from meta fields in the mock)
          fireEvent.change(selects[0], { target: { value: 'timestamp' } }); 
  
@@ -2113,16 +4016,16 @@ index 317b8d6..f7039a5 100644
          await waitFor(() => {
             expect(api.importCsv).toHaveBeenCalled();
          });
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Dashboard.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Dashboard.test.tsx"
+diff --git a/sunflow/sunflow/tests/Dashboard.test.tsx b/sunflow/sunflow/tests/Dashboard.test.tsx
 index a64e541..abaf0d7 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Dashboard.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Dashboard.test.tsx"
+--- a/sunflow/sunflow/tests/Dashboard.test.tsx
++++ b/sunflow/sunflow/tests/Dashboard.test.tsx
 @@ -48,35 +48,35 @@ describe('Dashboard Component', () => {
      });
    });
  
--  it('zeigt Skeleton Loader, solange Historie l├ñdt', async () => {
--    // Wir lassen getHistory h├ñngen (Promise ohne Resolve), um den Loading State zu erzwingen
+-  it('zeigt Skeleton Loader, solange Historie lädt', async () => {
+-    // Wir lassen getHistory hängen (Promise ohne Resolve), um den Loading State zu erzwingen
 +  it('shows skeleton loader while history is loading', async () => {
 +    // Keep getHistory pending (never resolves) to force the loading state
      (api.getHistory as any).mockReturnValue(new Promise(() => {}));
@@ -2149,7 +4052,7 @@ index a64e541..abaf0d7 100644
          expect(screen.getByText(/Return on Investment/i)).toBeInTheDocument();
      });
  
--    // Pr├╝fen ob Live-Daten (5000W PV) gerendert werden (im PowerFlow oder Stats)
+-    // Prüfen ob Live-Daten (5000W PV) gerendert werden (im PowerFlow oder Stats)
 -    // PowerFlow rendert "5000 W"
 +    // Verify live data (5000W PV) is rendered (PowerFlow or stats)
 +    // PowerFlow renders "5000 W"
@@ -2161,10 +4064,10 @@ index a64e541..abaf0d7 100644
      render(<Dashboard data={mockData} config={mockConfig} error="Connection Lost" refreshTrigger={0} />);
      await waitFor(() => {
        expect(screen.getByText('Connection Lost')).toBeInTheDocument();
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/PowerFlow.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/PowerFlow.test.tsx"
+diff --git a/sunflow/sunflow/tests/PowerFlow.test.tsx b/sunflow/sunflow/tests/PowerFlow.test.tsx
 index af223bb..fa7d5cf 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/PowerFlow.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/PowerFlow.test.tsx"
+--- a/sunflow/sunflow/tests/PowerFlow.test.tsx
++++ b/sunflow/sunflow/tests/PowerFlow.test.tsx
 @@ -18,7 +18,7 @@ describe('PowerFlow Component', () => {
          selfConsumption: 60
      };
@@ -2183,19 +4086,19 @@ index af223bb..fa7d5cf 100644
          const idlePower = { ...mockData.power, pv: 0 };
          render(<PowerFlow power={idlePower} soc={50} />);
          
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/ScenarioPlanner.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ScenarioPlanner.test.tsx"
+diff --git a/sunflow/sunflow/tests/ScenarioPlanner.test.tsx b/sunflow/sunflow/tests/ScenarioPlanner.test.tsx
 index 4dd3b3b..8d7c007 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/ScenarioPlanner.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ScenarioPlanner.test.tsx"
+--- a/sunflow/sunflow/tests/ScenarioPlanner.test.tsx
++++ b/sunflow/sunflow/tests/ScenarioPlanner.test.tsx
 @@ -28,20 +28,20 @@ describe('ScenarioPlanner Component', () => {
          (api.getTariffs as any).mockResolvedValue([]);
      });
  
--    it('├Âffnet Modal beim Klick auf den Trigger Button', async () => {
+-    it('öffnet Modal beim Klick auf den Trigger Button', async () => {
 +    it('opens the modal when clicking the trigger button', async () => {
          render(<ScenarioPlanner config={mockConfig} />);
          
--        // Button klicken, um Modal zu ├Âffnen
+-        // Button klicken, um Modal zu öffnen
 +        // Click button to open modal
          const trigger = screen.getByText(/Scenario Planner/i);
          fireEvent.click(trigger);
@@ -2207,7 +4110,7 @@ index 4dd3b3b..8d7c007 100644
          await waitFor(() => expect(api.getSimulationData).toHaveBeenCalled());
      });
  
--    it('l├ñdt Daten beim ├ûffnen', async () => {
+-    it('lädt Daten beim Öffnen', async () => {
 +    it('loads data when opening', async () => {
          (api.getSimulationData as any).mockResolvedValue(mockSimData);
          (api.getTariffs as any).mockResolvedValue([]);
@@ -2228,15 +4131,15 @@ index 4dd3b3b..8d7c007 100644
          (api.getSimulationData as any).mockResolvedValue(mockSimData);
          (api.getTariffs as any).mockResolvedValue([]);
  
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SettingsModal.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SettingsModal.test.tsx"
+diff --git a/sunflow/sunflow/tests/SettingsModal.test.tsx b/sunflow/sunflow/tests/SettingsModal.test.tsx
 index de08127..9386ccc 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SettingsModal.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SettingsModal.test.tsx"
+--- a/sunflow/sunflow/tests/SettingsModal.test.tsx
++++ b/sunflow/sunflow/tests/SettingsModal.test.tsx
 @@ -32,7 +32,7 @@ describe('SettingsModal Interaction', () => {
      (api.getExpenses as any).mockResolvedValue([]);
    });
  
--  it('l├ñdt mit korrekten Initialwerten', async () => {
+-  it('lädt mit korrekten Initialwerten', async () => {
 +  it('loads with correct initial values', async () => {
      render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
      await waitFor(() => {
@@ -2271,7 +4174,7 @@ index de08127..9386ccc 100644
 +    // 1. Switch to Notifications
      fireEvent.click(screen.getByText(/Notifications/i));
  
--    // 2. Checkbox f├╝r Battery Health finden und aktivieren
+-    // 2. Checkbox für Battery Health finden und aktivieren
 +    // 2. Find and enable the Battery Health checkbox
      const checkboxes = screen.getAllByRole('checkbox');
 -    // Die Battery Health Checkbox ist die 4. in der Liste (Errors, Full, Empty, Health, Smart)
@@ -2280,13 +4183,13 @@ index de08127..9386ccc 100644
      
      fireEvent.click(healthCheckbox);
  
--    // 3. Pr├╝fen ob die Zusatzfelder erscheinen (Alert Threshold)
+-    // 3. Prüfen ob die Zusatzfelder erscheinen (Alert Threshold)
 +    // 3. Verify additional fields appear (Alert Threshold)
      await waitFor(() => {
          expect(screen.getByText(/Alert Threshold/i)).toBeInTheDocument();
      });
  
--    // 4. Werte ├ñndern
+-    // 4. Werte ändern
 +    // 4. Change values
      const thresholdInput = screen.getByDisplayValue('75');
      fireEvent.change(thresholdInput, { target: { value: '80' } });
@@ -2314,7 +4217,7 @@ index de08127..9386ccc 100644
  
        const { container } = render(<SettingsModal currentConfig={configWithDb} onSave={onSaveMock} onClose={onCloseMock} />);
        
--      // Suche den Tab f├╝r History/Calibration. 
+-      // Suche den Tab für History/Calibration. 
 -      // Der Text im Button ist "Calibration" (Zeile 413), nicht "History" (Icon)!
 +      // Find the tab for History/Calibration.
 +      // The button text is "Calibration", not "History" (icon).
@@ -2325,17 +4228,17 @@ index de08127..9386ccc 100644
            expect(screen.getByText(/Pre-App History/i)).toBeInTheDocument();
        });
  
--      // Pr├╝fen ob Summen korrekt angezeigt werden (Initial + DB)
+-      // Prüfen ob Summen korrekt angezeigt werden (Initial + DB)
 +      // Verify totals are displayed correctly (initial + DB)
        // Production: 1000 + 5000 = 6,000
        // Note: Value is inside a div along with a span "kWh", so strict string match fails. Use Regex.
        // Locale might vary, so we match 6 followed by any separator and 000
        expect(screen.getByText(/6[,.\s]?000/)).toBeInTheDocument();
        
--      // Eingabewert ├ñndern (Manual Offset)
+-      // Eingabewert ändern (Manual Offset)
 +      // Change input value (manual offset)
        const prodInputs = container.querySelectorAll('input[type="number"]');
--      // Es gibt viele Inputs, wir suchen den f├╝r Production Offset (Value = 1000)
+-      // Es gibt viele Inputs, wir suchen den für Production Offset (Value = 1000)
 +      // There are many inputs; find the one for Production offset (value = 1000)
        const offsetInput = Array.from(prodInputs).find(i => (i as HTMLInputElement).value === '1000');
        
@@ -2359,15 +4262,15 @@ index de08127..9386ccc 100644
        fireEvent.click(importTab);
        
        await waitFor(() => {
--          // Pr├╝ft ob CsvImporter gerendert wird (Key Text)
+-          // Prüft ob CsvImporter gerendert wird (Key Text)
 +          // Verify CsvImporter is rendered (key text)
            expect(screen.getAllByText(/Click to upload/i).length).toBeGreaterThan(0);
        });
    });
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SmartRecommendations.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SmartRecommendations.test.tsx"
+diff --git a/sunflow/sunflow/tests/SmartRecommendations.test.tsx b/sunflow/sunflow/tests/SmartRecommendations.test.tsx
 index a20d6eb..79978f9 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SmartRecommendations.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SmartRecommendations.test.tsx"
+--- a/sunflow/sunflow/tests/SmartRecommendations.test.tsx
++++ b/sunflow/sunflow/tests/SmartRecommendations.test.tsx
 @@ -20,6 +20,11 @@ describe('SmartRecommendations Logic', () => {
      { id: 'phone', name: 'Phone Charger', watts: 15, kwhEstimate: 0.02, iconName: 'smartphone', color: 'text-gray-400' }
    ];
@@ -2384,7 +4287,7 @@ index a20d6eb..79978f9 100644
      hasSolcastKey: false
    };
  
--  it('empfiehlt Ger├ñt NICHT, wenn kein ├£berschuss da ist', () => {
+-  it('empfiehlt Gerät NICHT, wenn kein Überschuss da ist', () => {
 +  it('does NOT recommend an appliance when there is no surplus', () => {
      render(<SmartRecommendations 
          {...defaultProps}
@@ -2393,7 +4296,7 @@ index a20d6eb..79978f9 100644
      expect(screen.queryByText('Washing Machine')).not.toBeInTheDocument();
    });
  
--  it('empfiehlt Ger├ñt, wenn genug Grid Export vorhanden ist', () => {
+-  it('empfiehlt Gerät, wenn genug Grid Export vorhanden ist', () => {
 +  it('recommends an appliance when enough grid export is available', () => {
      render(<SmartRecommendations 
          {...defaultProps}
@@ -2459,10 +4362,10 @@ index a20d6eb..79978f9 100644
      expect(screen.getByText('Washing Machine')).toBeInTheDocument();
      expect(screen.getByText(/Battery Safe/i)).toBeInTheDocument();
    });
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatsCard.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatsCard.test.tsx"
+diff --git a/sunflow/sunflow/tests/StatsCard.test.tsx b/sunflow/sunflow/tests/StatsCard.test.tsx
 index 40d4741..7c5c8e3 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatsCard.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatsCard.test.tsx"
+--- a/sunflow/sunflow/tests/StatsCard.test.tsx
++++ b/sunflow/sunflow/tests/StatsCard.test.tsx
 @@ -6,29 +6,29 @@ import { Zap } from 'lucide-react';
  import React from 'react';
  
@@ -2499,10 +4402,10 @@ index 40d4741..7c5c8e3 100644
 +        expect(screen.getByText('Details here')).toBeInTheDocument();
      });
  });
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatusTimeline.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatusTimeline.test.tsx"
+diff --git a/sunflow/sunflow/tests/StatusTimeline.test.tsx b/sunflow/sunflow/tests/StatusTimeline.test.tsx
 index 7fd3237..717be38 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatusTimeline.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatusTimeline.test.tsx"
+--- a/sunflow/sunflow/tests/StatusTimeline.test.tsx
++++ b/sunflow/sunflow/tests/StatusTimeline.test.tsx
 @@ -5,13 +5,13 @@ import StatusTimeline from '../components/StatusTimeline';
  import React from 'react';
  
@@ -2530,10 +4433,10 @@ index 7fd3237..717be38 100644
          expect(screen.getAllByText(/Running/i).length).toBeGreaterThan(0);
          expect(screen.getAllByText(/Error/i).length).toBeGreaterThan(0);
          
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/WeatherWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/WeatherWidget.test.tsx"
+diff --git a/sunflow/sunflow/tests/WeatherWidget.test.tsx b/sunflow/sunflow/tests/WeatherWidget.test.tsx
 index 1e84c80..33334d9 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/WeatherWidget.test.tsx"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/WeatherWidget.test.tsx"
+--- a/sunflow/sunflow/tests/WeatherWidget.test.tsx
++++ b/sunflow/sunflow/tests/WeatherWidget.test.tsx
 @@ -5,13 +5,13 @@ import WeatherWidget from '../components/WeatherWidget';
  import React from 'react';
  
@@ -2551,7 +4454,7 @@ index 1e84c80..33334d9 100644
          const mockWeather = {
              current: {
 @@ -25,7 +25,7 @@ describe('WeatherWidget Component', () => {
-         expect(screen.getByText(/22.5┬░C/)).toBeInTheDocument();
+         expect(screen.getByText(/22.5°C/)).toBeInTheDocument();
      });
      
 -    it('zeigt Nacht-Modus an', () => {
@@ -2559,10 +4462,10 @@ index 1e84c80..33334d9 100644
          const mockConfig = { inverterIp: '1.2.3', currency: 'EUR', latitude: '50', longitude: '10' };
          const mockWeather = {
              current: {
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.auth.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.auth.test.ts"
+diff --git a/sunflow/sunflow/tests/api.auth.test.ts b/sunflow/sunflow/tests/api.auth.test.ts
 index 9871e5d..e8467ea 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.auth.test.ts"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.auth.test.ts"
+--- a/sunflow/sunflow/tests/api.auth.test.ts
++++ b/sunflow/sunflow/tests/api.auth.test.ts
 @@ -265,6 +265,13 @@ describe('Backend API (auth/admin)', () => {
        .set('Content-Type', 'application/json');
      expect(ok.status).toBe(200);
@@ -2577,11 +4480,11 @@ index 9871e5d..e8467ea 100644
      const getRes = await request(app).get('/api/config');
      expect(getRes.status).toBe(200);
      expect(getRes.body.inverterIp).toBe('192.168.1.10:80');
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.ingress.basepath.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.ingress.basepath.test.ts"
+diff --git a/sunflow/sunflow/tests/api.ingress.basepath.test.ts b/sunflow/sunflow/tests/api.ingress.basepath.test.ts
 new file mode 100644
 index 0000000..ebfed82
 --- /dev/null
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.ingress.basepath.test.ts"
++++ b/sunflow/sunflow/tests/api.ingress.basepath.test.ts
 @@ -0,0 +1,22 @@
 +// @vitest-environment jsdom
 +
@@ -2605,10 +4508,10 @@ index 0000000..ebfed82
 +    expect(fetchMock.mock.calls[0][0]).toBe('/api/hassio_ingress/abc123/api/config');
 +  });
 +});
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.service.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.service.test.ts"
+diff --git a/sunflow/sunflow/tests/api.service.test.ts b/sunflow/sunflow/tests/api.service.test.ts
 index 247cb78..dd693d6 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.service.test.ts"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.service.test.ts"
+--- a/sunflow/sunflow/tests/api.service.test.ts
++++ b/sunflow/sunflow/tests/api.service.test.ts
 @@ -26,7 +26,7 @@ describe('services/api.ts (unit)', () => {
      await getHistory('day', undefined, undefined, 7);
  
@@ -2662,10 +4565,10 @@ index 247cb78..dd693d6 100644
      expect((opts as any).method).toBe('POST');
  
      const body = (opts as any).body as FormData;
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.test.ts"
+diff --git a/sunflow/sunflow/tests/api.test.ts b/sunflow/sunflow/tests/api.test.ts
 index 564b57d..6b1c1da 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.test.ts"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.test.ts"
+--- a/sunflow/sunflow/tests/api.test.ts
++++ b/sunflow/sunflow/tests/api.test.ts
 @@ -117,6 +117,21 @@ describe('Backend API (integration)', () => {
      expect(getRes.body.inverterIp).toBe('192.168.1.50');
    });
@@ -2688,11 +4591,11 @@ index 564b57d..6b1c1da 100644
    it('POST /api/config rejects invalid inverterIp', async () => {
      const res = await request(app)
        .post('/api/config')
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ingress.staticpaths.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ingress.staticpaths.test.ts"
+diff --git a/sunflow/sunflow/tests/ingress.staticpaths.test.ts b/sunflow/sunflow/tests/ingress.staticpaths.test.ts
 new file mode 100644
 index 0000000..14a6dde
 --- /dev/null
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ingress.staticpaths.test.ts"
++++ b/sunflow/sunflow/tests/ingress.staticpaths.test.ts
 @@ -0,0 +1,23 @@
 +import { describe, expect, it } from 'vitest';
 +import fs from 'fs';
@@ -2717,10 +4620,10 @@ index 0000000..14a6dde
 +    expect(hasAbsoluteSrc).toBe(false);
 +  });
 +});
-diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/vite.config.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/vite.config.ts"
+diff --git a/sunflow/sunflow/vite.config.ts b/sunflow/sunflow/vite.config.ts
 index c0ad79e..1afef58 100644
---- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/vite.config.ts"
-+++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/vite.config.ts"
+--- a/sunflow/sunflow/vite.config.ts
++++ b/sunflow/sunflow/vite.config.ts
 @@ -2,10 +2,14 @@
  /// <reference types="vitest" />
  import { configDefaults, defineConfig } from 'vitest/config';

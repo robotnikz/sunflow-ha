@@ -8,6 +8,9 @@ The "main app" is **Sunflow**:
 
 - https://github.com/robotnikz/Sunflow
 
+The upstream repository is where you can run Sunflow as a **standalone Docker service** (outside of Home Assistant).
+This repository focuses on the **Home Assistant Add-on** packaging (Ingress UI) plus the optional Home Assistant **Integration**.
+
 This Home Assistant repository packages that app as a **complete, standalone add-on** (frontend + backend) that runs independently inside Home Assistant.
 The Home Assistant integration is **optional** and only needed if you want entities/sensors in Home Assistant.
 

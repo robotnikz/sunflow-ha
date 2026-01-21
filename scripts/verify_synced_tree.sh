@@ -22,6 +22,18 @@ DEST_DIR="${TMP_DIR}/synced"
 # Re-sync upstream into a temp folder + apply patches
 DEST_DIR="${DEST_DIR}" GITHUB_TOKEN="${GITHUB_TOKEN:-}" UPSTREAM_REPO="${UPSTREAM_REPO}" bash scripts/sync_upstream.sh "${TAG}"
 
+# Materialize the expected vendored tree from the repo (HEAD) into temp.
+# This avoids false diffs caused by Windows CRLF checkouts.
+EXPECTED_DIR="${TMP_DIR}/expected"
+mkdir -p "${EXPECTED_DIR}"
+
+if ! command -v tar >/dev/null 2>&1; then
+  echo "tar not found" >&2
+  exit 1
+fi
+
+git archive "HEAD:sunflow/sunflow" | tar -x -C "${EXPECTED_DIR}"
+
 # Compare temp result with repo's vendored tree, ignoring transient artifacts.
 RSYNC_EXCLUDES=(
   --exclude ".git"
@@ -35,7 +47,7 @@ RSYNC_EXCLUDES=(
 )
 
 # If rsync reports any changes, the committed tree isn't reproducible from upstream+patches.
-CHANGES="$(rsync -a --delete --dry-run --out-format='%i %n%L' "${RSYNC_EXCLUDES[@]}" "${DEST_DIR}/" "sunflow/sunflow/" | sed '/^\s*$/d' || true)"
+CHANGES="$(rsync -rc --delete --dry-run --out-format='%i %n%L' "${RSYNC_EXCLUDES[@]}" "${DEST_DIR}/" "${EXPECTED_DIR}/" | sed '/^\s*$/d' || true)"
 if [ -n "${CHANGES}" ]; then
   echo "Vendored tree sunflow/sunflow is NOT reproducible from ${UPSTREAM_REPO}@${TAG} + patches." >&2
   echo "" >&2

@@ -21,6 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Patch layer sanity (no CRLF / no absolute paths)
+        run: |
+          chmod +x scripts/check_patches_sane.sh
+          bash scripts/check_patches_sane.sh
       - name: Verify upstream + patches reproduces vendored tree
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

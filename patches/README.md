@@ -13,11 +13,13 @@ They are automatically applied after each upstream sync (see `scripts/sync_upstr
 ## Creating a patch
 
 1. Make your HA-only change.
-2. Create/update a patch file:
+2. Regenerate the patch file deterministically:
 
-- `git diff -- sunflow/sunflow > patches/0001-ha-overrides.patch`
+- `bash scripts/regenerate_patch.sh`
 
 3. Commit the patch.
+
+Note: avoid generating patch files from a Windows working tree diff, because CRLF line endings can break `git apply` on Linux CI.
 
 ## Why
 
