@@ -2,16 +2,23 @@
 
 	<img src="logo.png" alt="Sunflow Logo" width="100" />
 
-	# Sunflow for Home Assistant
+	<h1>Sunflow for Home Assistant</h1>
 
-	**Home Assistant Add-on (Ingress UI) + optional Integration (sensors).**
+	<strong>Home Assistant Add-on (Ingress UI) + optional Integration (sensors).</strong>
 
-	Run the Sunflow dashboard inside Home Assistant, and optionally expose key values as entities.
+	<p>Run the Sunflow dashboard inside Home Assistant, and optionally expose key values as entities.</p>
 
-	<!-- Badges -->
-	[![CI](https://github.com/robotnikz/sunflow-ha/actions/workflows/ci.yml/badge.svg)](https://github.com/robotnikz/sunflow-ha/actions/workflows/ci.yml)
-	[![GitHub Release](https://img.shields.io/github/v/release/robotnikz/sunflow-ha)](https://github.com/robotnikz/sunflow-ha/releases)
-	[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
+	<p>
+		<a href="https://github.com/robotnikz/sunflow-ha/actions/workflows/ci.yml">
+			<img alt="CI" src="https://github.com/robotnikz/sunflow-ha/actions/workflows/ci.yml/badge.svg" />
+		</a>
+		<a href="https://github.com/robotnikz/sunflow-ha/releases">
+			<img alt="GitHub Release" src="https://img.shields.io/github/v/release/robotnikz/sunflow-ha" />
+		</a>
+		<a href="https://hacs.xyz/">
+			<img alt="HACS" src="https://img.shields.io/badge/HACS-Custom-orange.svg" />
+		</a>
+	</p>
 
 </div>
 
