@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/robotnikz/sunflow-ha/compare/v1.0.0...v1.0.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* **sync:** make upstream patch layer CI-safe ([512c358](https://github.com/robotnikz/sunflow-ha/commit/512c35848cf1548f7d86d8740725df7e70631560))
+
 # Changelog
 
 This changelog tracks the Home Assistant add-on wrapper version.

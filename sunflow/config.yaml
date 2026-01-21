@@ -1,6 +1,6 @@
 name: Sunflow
 slug: sunflow
-version: "1.0.0"
+version: "1.0.1"
 description: "Solar energy dashboard with Ingress UI and a local REST API"
 url: "https://github.com/robotnikz/sunflow-ha"
 arch:
