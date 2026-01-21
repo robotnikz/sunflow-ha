@@ -1,6 +1,36 @@
 # Node
 **/node_modules/
 **/dist/
+**/build/
+**/out/
+**/.vite/
+**/.next/
+**/.nuxt/
+**/.svelte-kit/
+**/.astro/
+**/.cache/
+**/.parcel-cache/
+**/.turbo/
+**/*.tsbuildinfo
+
+# Node logs
+**/npm-debug.log*
+**/pnpm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Env / local overrides
+**/.env
+**/.env.*
+**/.envrc
+**/docker-compose.override.yml
+**/.eslintcache
+**/.stylelintcache
+
+# E2E / test artifacts (Node)
+**/playwright-report/
+**/test-results/
+**/coverage/
 
 # Sunflow runtime data
 **/data/
@@ -8,9 +38,25 @@
 **/sunflow-data-ci-local/
 **/uploads/
 **/solar_data.db
+**/*.db
+**/*.db-journal
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite
+**/*.sqlite3
+
+# Temp dirs created by sync/patch tooling
+**/*sunflow-patch-*/
+**/.tmp/
 
 # Python/venv (accidental)
 **/.venv/
+**/.tox/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/.coverage.*
+**/*.egg-info/
 
 # Python bytecode
 **/__pycache__/
@@ -19,9 +65,13 @@
 **/*.pyd
 
 # Test artifacts
-**/test-results/
 **/.pytest_cache/
+
+# Home Assistant (local)
+**/.storage/
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+*.lnk
