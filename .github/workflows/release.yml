@@ -60,17 +60,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install release tooling
+        run: npm ci --no-audit --no-fund
 
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx -y \
-            -p semantic-release@25 \
-            -p @semantic-release/commit-analyzer@13 \
-            -p @semantic-release/release-notes-generator@14 \
-            -p @semantic-release/changelog@6 \
-            -p @semantic-release/exec@6 \
-            -p @semantic-release/git@10 \
-            -p @semantic-release/github@11 \
-            semantic-release -e ./release.config.cjs
+          npx semantic-release -e ./release.config.cjs
