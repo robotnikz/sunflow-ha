@@ -1,3 +1,33 @@
+## [1.0.2](https://github.com/robotnikz/sunflow-ha/compare/v1.0.1...v1.0.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* **release:** append upstream info to notes ([cf22f8d](https://github.com/robotnikz/sunflow-ha/commit/cf22f8daf8264e0d078b9896747e560e72f0e63e))
+
+
+
+
+
+## [1.0.2](https://github.com/robotnikz/sunflow-ha/compare/v1.0.1...v1.0.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* **release:** append upstream info to notes ([cf22f8d](https://github.com/robotnikz/sunflow-ha/commit/cf22f8daf8264e0d078b9896747e560e72f0e63e))
+
+
+
+
+
+---
+### Upstream Sunflow (Main Project)
+- Standalone Docker app: https://github.com/robotnikz/Sunflow
+- Bundled upstream version: v1.11.1
+### Home Assistant Packaging
+- Add-on + integration repo: https://github.com/robotnikz/sunflow-ha
+- Upstream sync process: https://github.com/robotnikz/sunflow-ha/blob/main/docs/SYNCING.md
+
 ## [1.0.1](https://github.com/robotnikz/sunflow-ha/compare/v1.0.0...v1.0.1) (2026-01-21)
 
 
