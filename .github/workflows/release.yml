@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  tests:
+    name: Tests (required)
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: sunflow/sunflow/package-lock.json
+
+      - name: Frontend/Backend unit+integration tests
+        working-directory: sunflow/sunflow
+        run: |
+          npm ci
+          npm run test:ingress
+          npm run test:run -- tests/api.service.test.ts
+
+      - name: Add-on smoke test (docker build + /api/info)
+        env:
+          ARCH: amd64
+          TIMEOUT_SECONDS: 90
+        run: |
+          chmod +x scripts/addon_smoke_test.sh
+          ./scripts/addon_smoke_test.sh
+
+  semantic-release:
+    name: Semantic Release
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    needs: [tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx -y \
+            -p semantic-release@25 \
+            -p @semantic-release/commit-analyzer@13 \
+            -p @semantic-release/release-notes-generator@14 \
+            -p @semantic-release/changelog@6 \
+            -p @semantic-release/exec@6 \
+            -p @semantic-release/git@10 \
+            -p @semantic-release/github@11 \
+            semantic-release -e ./release.config.cjs
