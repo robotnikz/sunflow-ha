@@ -5,6 +5,10 @@ The bundled upstream Sunflow app has its own release/versioning.
 
 Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
+## 0.1.8
+
+- Integration: fix missing entities by retrying setup when the add-on is temporarily unreachable and by making entity unique IDs per config entry.
+
 ## 0.1.6
 
 - Fix settings save failing with HTTP 404 under Home Assistant Ingress by deriving the correct ingress base path for API calls.
