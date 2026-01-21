@@ -1,26 +1,50 @@
-# Sunflow for Home Assistant (Add-on + Integration)
+<div align="center">
 
-This repository provides Sunflow as a **Home Assistant Add-on** (Ingress UI) and an optional **Home Assistant Integration** (sensors + config flow).
+	<img src="logo.png" alt="Sunflow Logo" width="100" />
 
-## Upstream project
+	# Sunflow for Home Assistant
 
-The "main app" is **Sunflow**:
+	**Home Assistant Add-on (Ingress UI) + optional Integration (sensors).**
 
-- https://github.com/robotnikz/Sunflow
+	Run the Sunflow dashboard inside Home Assistant, and optionally expose key values as entities.
 
-The upstream repository is where you can run Sunflow as a **standalone Docker service** (outside of Home Assistant).
-This repository focuses on the **Home Assistant Add-on** packaging (Ingress UI) plus the optional Home Assistant **Integration**.
+	<!-- Badges -->
+	[![CI](https://github.com/robotnikz/sunflow-ha/actions/workflows/ci.yml/badge.svg)](https://github.com/robotnikz/sunflow-ha/actions/workflows/ci.yml)
+	[![GitHub Release](https://img.shields.io/github/v/release/robotnikz/sunflow-ha)](https://github.com/robotnikz/sunflow-ha/releases)
+	[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 
-This Home Assistant repository packages that app as a **complete, standalone add-on** (frontend + backend) that runs independently inside Home Assistant.
-The Home Assistant integration is **optional** and only needed if you want entities/sensors in Home Assistant.
+</div>
 
-Important: do **not** add `https://github.com/robotnikz/Sunflow` to HACS as an *Integration*.
-That upstream repository is the standalone app, not a Home Assistant `custom_components/` integration.
-For HACS you must add **this** repository: `https://github.com/robotnikz/sunflow-ha`.
+---
 
-Versioning note: the Home Assistant add-on and integration use independent versions (this repo release), and the bundled Sunflow app has its own upstream version.
+> [!IMPORTANT]
+> **Hardware requirement:** Sunflow is built specifically for the **Fronius Solar API** and targets the **Fronius Gen24 (Symo/Primo)** inverter family.
+> If you **don't have a Fronius Gen24 inverter with Solar API enabled**, Sunflow will not be able to read live data.
 
-## Install (Add-on)
+## ⚡ What is this repository?
+
+This repository packages the Sunflow main application as a **Home Assistant Add-on** (Ingress UI) and also provides an optional **Home Assistant Integration** (sensors + config flow).
+
+**Upstream (main app):** https://github.com/robotnikz/Sunflow
+
+- If you want to run Sunflow as a **standalone Docker service** (outside of Home Assistant), use the upstream repository.
+- If you want the **Home Assistant Add-on** (Ingress UI) and optional integration, you are in the right place.
+
+> [!IMPORTANT]
+> Do **not** add the upstream repository to HACS as an Integration.
+> For HACS, use this repository: `https://github.com/robotnikz/sunflow-ha`.
+
+## ✨ Key Features
+
+- **Ingress UI:** opens in the Home Assistant sidebar (no port exposure required).
+- **Persistent data:** stored under `/data` in the add-on container (survives restarts/upgrades).
+- **Supervisor watchdog support:** built-in `/api/info` health endpoint.
+- **Optional Integration:** adds entities/sensors to Home Assistant (via HACS).
+- **Independent versioning:** this repo releases independently; it bundles a specific upstream Sunflow version.
+
+---
+
+## 🚀 Install (Add-on)
 
 1. Home Assistant → **Settings** → **Add-ons** → **Add-on Store**.
 2. Menu (top right) → **Repositories**.
@@ -30,13 +54,11 @@ Versioning note: the Home Assistant add-on and integration use independent versi
 6. Start the add-on.
 7. Open the UI via the **Sunflow** sidebar entry (Ingress).
 
-For an end-to-end checklist on real HAOS / Supervised, see: [docs/HAOS_TESTPLAN.md](docs/HAOS_TESTPLAN.md).
+End-to-end checklist on real HAOS / Supervised: [docs/HAOS_TESTPLAN.md](docs/HAOS_TESTPLAN.md)
 
-## Install (Integration via HACS, optional)
+## 🧩 Install (Integration via HACS, optional)
 
-This is recommended if you want entities/sensors inside Home Assistant.
-
-Note: the **Home Assistant Integrations** screen does not have "custom repositories". That feature is part of **HACS**.
+Recommended if you want entities/sensors inside Home Assistant.
 
 1. Install HACS.
 2. HACS → **Integrations** → menu → **Custom repositories**.
@@ -45,25 +67,27 @@ Note: the **Home Assistant Integrations** screen does not have "custom repositor
 5. Restart Home Assistant.
 6. Settings → **Devices & services** → **Add integration** → **Sunflow**.
 
-If you don't use HACS, you can install manually:
+Manual install (without HACS):
 
 1. Copy `custom_components/sunflow/` into your Home Assistant config folder at `config/custom_components/sunflow/`.
 2. Restart Home Assistant.
 3. Settings → **Devices & services** → **Add integration** → **Sunflow**.
 
-On supervised installations (HAOS / HA Supervised), the integration can auto-connect to the locally installed Sunflow add-on via the Supervisor network (no host port exposure required).
+On supervised installations (HAOS / HA Supervised), the integration can auto-connect to the locally installed Sunflow add-on via the Supervisor network.
 
-## Layout
+---
 
-- `repository.yaml` — Home Assistant Add-on repository metadata
-- `sunflow/` — Home Assistant add-on (Supervisor)
-- `sunflow/sunflow/` — Sunflow app source (Vite frontend + Node backend)
+## 🗂️ Repository Layout
+
+- `repository.yaml` — add-on repository metadata (Supervisor)
+- `sunflow/` — Home Assistant add-on
+- `sunflow/sunflow/` — vendored upstream Sunflow app (Vite frontend + Node backend)
 - `custom_components/sunflow/` — Home Assistant integration (HACS)
-- `docs/` — test plan and notes
+- `docs/` — notes, test plans
 
-## Development / CI
+## 🧪 Development / CI
 
-- Ingress build check: run `npm run test:ingress` from `sunflow/sunflow/`.
-- Add-on smoke test (Docker): run `powershell -File .\scripts\addon_smoke_test.ps1` from repo root.
+- Ingress build check: `npm run test:ingress` (run from `sunflow/sunflow/`)
+- Add-on smoke test (Docker): `powershell -File .\scripts\addon_smoke_test.ps1` (run from repo root)
 
-CI runs both checks via `.github/workflows/ci.yml`.
+CI runs both via `.github/workflows/ci.yml`.
