@@ -10,7 +10,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
 from .api import SunflowClient
 from .const import (
@@ -91,11 +91,12 @@ async def async_setup_entry(
     )
 
 
-class _SunflowBaseSensor(SensorEntity):
+class _SunflowBaseSensor(CoordinatorEntity, SensorEntity):
     _attr_has_entity_name = True
+    _attr_should_poll = False
 
     def __init__(self, coordinator: DataUpdateCoordinator, entry: ConfigEntry) -> None:
-        self._coordinator = coordinator
+        super().__init__(coordinator)
         self._entry = entry
 
     @property
@@ -109,10 +110,7 @@ class _SunflowBaseSensor(SensorEntity):
 
     @property
     def available(self) -> bool:
-        return self._coordinator.last_update_success
-
-    async def async_update(self) -> None:
-        await self._coordinator.async_request_refresh()
+        return self.coordinator.last_update_success
 
 
 class SunflowVersionSensor(_SunflowBaseSensor):
@@ -124,7 +122,7 @@ class SunflowVersionSensor(_SunflowBaseSensor):
 
     @property
     def native_value(self):
-        info = self._coordinator.data.get("info")
+        info = self.coordinator.data.get("info")
         return getattr(info, "version", None)
 
 
@@ -140,7 +138,7 @@ class SunflowPVPowerSensor(_SunflowBaseSensor):
 
     @property
     def native_value(self):
-        p = (self._coordinator.data.get("realtime") or {}).get("power") or {}
+        p = (self.coordinator.data.get("realtime") or {}).get("power") or {}
         return p.get("pv")
 
 
@@ -156,7 +154,7 @@ class SunflowLoadPowerSensor(_SunflowBaseSensor):
 
     @property
     def native_value(self):
-        p = (self._coordinator.data.get("realtime") or {}).get("power") or {}
+        p = (self.coordinator.data.get("realtime") or {}).get("power") or {}
         return p.get("load")
 
 
@@ -172,7 +170,7 @@ class SunflowGridPowerSensor(_SunflowBaseSensor):
 
     @property
     def native_value(self):
-        p = (self._coordinator.data.get("realtime") or {}).get("power") or {}
+        p = (self.coordinator.data.get("realtime") or {}).get("power") or {}
         return p.get("grid")
 
 
@@ -182,7 +180,7 @@ class _SunflowBatteryPowerBase(_SunflowBaseSensor):
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def _get_battery_power_w(self) -> float | None:
-        p = (self._coordinator.data.get("realtime") or {}).get("power") or {}
+        p = (self.coordinator.data.get("realtime") or {}).get("power") or {}
         val = p.get("battery")
         if val is None:
             return None
@@ -251,5 +249,5 @@ class SunflowBatterySocSensor(_SunflowBaseSensor):
 
     @property
     def native_value(self):
-        b = (self._coordinator.data.get("realtime") or {}).get("battery") or {}
+        b = (self.coordinator.data.get("realtime") or {}).get("battery") or {}
         return b.get("soc")
