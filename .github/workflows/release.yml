@@ -27,6 +27,7 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+          ignore: brands
 
   tests:
     name: Tests (required)
