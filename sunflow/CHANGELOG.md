@@ -5,6 +5,11 @@ The bundled upstream Sunflow app has its own release/versioning.
 
 Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
+## 0.1.10
+
+- Integration: add an Options screen to configure the polling interval (default still 30s unless changed by the user).
+- Integration: avoid calling `/api/info` on every poll (cache via TTL ~1h); realtime `/api/data` remains per poll for timely automations.
+
 ## 0.1.9
 
 - Integration: add battery charge/discharge power sensors (and signed battery power) derived from `power.battery`.

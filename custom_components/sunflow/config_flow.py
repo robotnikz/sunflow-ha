@@ -7,12 +7,25 @@ from homeassistant.const import CONF_NAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SunflowClient
-from .const import CONF_ADMIN_TOKEN, CONF_BASE_URL, DEFAULT_LOCAL_ADDON_PORT, DOMAIN
+from .const import (
+    CONF_ADMIN_TOKEN,
+    CONF_BASE_URL,
+    CONF_SCAN_INTERVAL_SECONDS,
+    DEFAULT_LOCAL_ADDON_PORT,
+    DEFAULT_SCAN_INTERVAL_SECONDS,
+    DOMAIN,
+    SCAN_INTERVAL_CHOICES_SECONDS,
+)
 from .supervisor import async_get_addon_info, async_get_sunflow_addon_slug, async_is_supervised
 
 
 class SunflowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
+
+    @staticmethod
+    @config_entries.callback
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry):
+        return SunflowOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input: dict | None = None):
         # Entry point:
@@ -147,3 +160,23 @@ class SunflowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(step_id="local_addon", data_schema=schema, errors=errors)
+
+
+class SunflowOptionsFlow(config_entries.OptionsFlow):
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self._config_entry = config_entry
+
+    async def async_step_init(self, user_input: dict | None = None):
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current = self._config_entry.options.get(CONF_SCAN_INTERVAL_SECONDS, DEFAULT_SCAN_INTERVAL_SECONDS)
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_SCAN_INTERVAL_SECONDS,
+                    default=current,
+                ): vol.In(SCAN_INTERVAL_CHOICES_SECONDS)
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)

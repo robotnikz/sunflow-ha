@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+import time
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
@@ -12,7 +13,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import SunflowClient
-from .const import CONF_ADMIN_TOKEN, CONF_BASE_URL, DEFAULT_SCAN_INTERVAL_SECONDS, DOMAIN
+from .const import (
+    CONF_ADMIN_TOKEN,
+    CONF_BASE_URL,
+    CONF_SCAN_INTERVAL_SECONDS,
+    DEFAULT_SCAN_INTERVAL_SECONDS,
+    DOMAIN,
+)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,17 +36,35 @@ async def async_setup_entry(
     session = async_get_clientsession(hass)
     client = SunflowClient(session=session, base_url=base_url, admin_token=admin_token)
 
+    # Realtime should be fast for automations/notifications.
+    # Info is relatively static, so avoid fetching it on every tick.
+    info_ttl_seconds = 60 * 60
+    last_info_fetch_monotonic = 0.0
+    cached_info = None
+
     async def _async_update_data():
-        info = await client.get_info()
+        nonlocal last_info_fetch_monotonic, cached_info
+        now = time.monotonic()
+
+        if cached_info is None or (now - last_info_fetch_monotonic) >= info_ttl_seconds:
+            cached_info = await client.get_info()
+            last_info_fetch_monotonic = now
+
         realtime = await client.get_realtime()
-        return {"info": info, "realtime": realtime}
+        return {"info": cached_info, "realtime": realtime}
+
+    scan_interval_seconds = entry.options.get(CONF_SCAN_INTERVAL_SECONDS, DEFAULT_SCAN_INTERVAL_SECONDS)
+    try:
+        scan_interval_seconds = int(scan_interval_seconds)
+    except (TypeError, ValueError):
+        scan_interval_seconds = DEFAULT_SCAN_INTERVAL_SECONDS
 
     coordinator = DataUpdateCoordinator(
         hass,
         logger=_LOGGER,
         name=f"Sunflow ({base_url})",
         update_method=_async_update_data,
-        update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL_SECONDS),
+        update_interval=timedelta(seconds=scan_interval_seconds),
     )
 
     try:

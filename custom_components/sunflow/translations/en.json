@@ -34,5 +34,16 @@
     "abort": {
       "already_configured": "This Sunflow instance is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sunflow options",
+        "description": "Adjust how often Home Assistant polls Sunflow for realtime data.",
+        "data": {
+          "scan_interval_seconds": "Polling interval (seconds)"
+        }
+      }
+    }
   }
 }
