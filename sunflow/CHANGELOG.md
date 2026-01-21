@@ -1,3 +1,11 @@
+## [1.0.4](https://github.com/robotnikz/sunflow-ha/compare/v1.0.3...v1.0.4) (2026-01-21)
+
+
+### Bug Fixes
+
+* **readme:** render header correctly ([c3ce5a4](https://github.com/robotnikz/sunflow-ha/commit/c3ce5a4533360b7eef1b82fd3162247ced359d4c))
+* **readme:** repair header ([3eb10e8](https://github.com/robotnikz/sunflow-ha/commit/3eb10e8c7a09ff166056b2668fe1270bde709ac8))
+
 ## [1.0.3](https://github.com/robotnikz/sunflow-ha/compare/v1.0.2...v1.0.3) (2026-01-21)
 
 
