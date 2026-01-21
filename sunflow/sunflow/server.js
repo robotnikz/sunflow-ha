@@ -74,10 +74,15 @@ const resolveSafeDataDir = (maybeDir) => {
         return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
     };
 
+    // Home Assistant add-ons persist data under /data.
+    // Allow it explicitly so the add-on uses Supervisor-managed storage.
+    const haDataDir = '/data';
+
     if (
         isWithin(__dirname, resolved) ||
         isWithin(process.cwd(), resolved) ||
-        isWithin(os.tmpdir(), resolved)
+        isWithin(os.tmpdir(), resolved) ||
+        isWithin(haDataDir, resolved)
     ) {
         return resolved;
     }

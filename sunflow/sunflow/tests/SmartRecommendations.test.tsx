@@ -31,7 +31,7 @@ describe('SmartRecommendations Logic', () => {
     hasSolcastKey: false
   };
 
-  it('empfiehlt Gerät NICHT, wenn kein Überschuss da ist', () => {
+  it('does NOT recommend an appliance when there is no surplus', () => {
     render(<SmartRecommendations 
         {...defaultProps}
         power={{ grid: 500, battery: 0, pv: 500, load: 1000 }} // Grid Import (Positive)
@@ -42,44 +42,44 @@ describe('SmartRecommendations Logic', () => {
     expect(screen.queryByText('Washing Machine')).not.toBeInTheDocument();
   });
 
-  it('empfiehlt Gerät, wenn genug Grid Export vorhanden ist', () => {
+  it('recommends an appliance when enough grid export is available', () => {
     render(<SmartRecommendations 
         {...defaultProps}
         power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }} // 2500W Export
-        soc={80} // Batterie fast voll
+        soc={80} // Battery almost full
     />);
     
-    // Header sollte "Smart Usage" zeigen
+    // Header should show "Smart Usage"
     expect(screen.getByText(/Smart Usage/i)).toBeInTheDocument();
-    // Waschmaschine (2000W) passt in 2500W Export
+    // Washing machine (2000W) fits into 2500W export
     expect(screen.getByText('Washing Machine')).toBeInTheDocument();
   });
 
-  it('blockiert Empfehlung im "Battery Priority" Modus (SOC niedrig, kein Forecast)', () => {
+  it('blocks recommendation in "Battery Priority" mode (low SoC, no forecast)', () => {
     render(<SmartRecommendations 
         {...defaultProps}
         power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }} 
-        soc={20} // Batterie leer!
+        soc={20} // Battery low!
         // hasSolcastKey=false triggert Fallback-Logik
     />);
 
-    // Sollte nicht empfohlen werden, da SOC < 80% (Fallback Logic) und kein Forecast Key
-    // Die Logic besagt: if !hasAnyForecastData -> if soc > 80 allow divert.
+    // Should not recommend because SoC < 80% (fallback logic) and no forecast key
+    // Logic: if !hasAnyForecastData -> if soc > 80 allow divert.
     expect(screen.queryByText('Washing Machine')).not.toBeInTheDocument();
     expect(screen.getByText(/Battery Priority/i)).toBeInTheDocument();
   });
 
-  it('erlaubt Empfehlung bei niedrigem SOC, WENN Forecast extrem positiv ist', () => {
+  it('allows recommendation at low SoC WHEN forecast is extremely positive', () => {
     render(<SmartRecommendations 
         {...defaultProps}
         hasSolcastKey={true}
-        forecast={{ forecasts: [{ period_end: new Date(Date.now() + 3600000).toISOString(), pv_estimate: 50 }] }} // Riesiger Forecast
+        forecast={{ forecasts: [{ period_end: new Date(Date.now() + 3600000).toISOString(), pv_estimate: 50 }] }} // Huge forecast
         power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }}
         soc={20} 
     />);
 
-    // Hier greift die Logik: forecastRemainingKwh > kwhToFill
-    // 50 kW Forecast >> 8 kWh needed to fill. => Safe.
+    // Logic: forecastRemainingKwh > kwhToFill
+    // 50 kW forecast >> 8 kWh needed to fill => safe.
     expect(screen.getByText('Washing Machine')).toBeInTheDocument();
     expect(screen.getByText(/Battery Safe/i)).toBeInTheDocument();
   });

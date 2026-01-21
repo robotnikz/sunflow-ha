@@ -1,7 +1,27 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:15.0.7
+ARG BUILD_VERSION=dev
+ARG BUILD_ARCH=amd64
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy Sunflow source (packaged in this repo under /sunflow)
+COPY sunflow/ /app/
+
+# Build native deps + frontend in the builder image.
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+  && npm ci \
+  && npm run build \
+  && npm prune --omit=dev \
+  && npm cache clean --force
+
+FROM ${BUILD_FROM}
+
 ARG BUILD_VERSION
 ARG BUILD_ARCH
-FROM ${BUILD_FROM}
 
 LABEL \
   io.hass.version=${BUILD_VERSION} \
@@ -9,25 +29,13 @@ LABEL \
   io.hass.arch=${BUILD_ARCH}
 
 # Home Assistant add-on base images are Alpine-based.
-# We use nodejs + npm from apk and build the frontend in-image for MVP.
+# We install only the runtime requirements here.
 
 WORKDIR /app
 
-RUN apk add --no-cache nodejs npm
+RUN apk add --no-cache nodejs
 
-# Copy Sunflow source (packaged in this repo under /sunflow)
-COPY sunflow/ /app/
-
-# Install deps and build frontend
-RUN apk add --no-cache --virtual .build-deps \
-    python3 \
-    make \
-    g++ \
-  && npm ci \
-  && npm run build \
-  && npm prune --omit=dev \
-  && npm cache clean --force \
-  && apk del .build-deps
+COPY --from=build /app/ /app/
 
 # Ensure persistent data dir exists
 RUN mkdir -p /data

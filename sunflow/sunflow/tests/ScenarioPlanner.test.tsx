@@ -28,20 +28,20 @@ describe('ScenarioPlanner Component', () => {
         (api.getTariffs as any).mockResolvedValue([]);
     });
 
-    it('öffnet Modal beim Klick auf den Trigger Button', async () => {
+    it('opens the modal when clicking the trigger button', async () => {
         render(<ScenarioPlanner config={mockConfig} />);
         
-        // Button klicken, um Modal zu öffnen
+        // Click button to open modal
         const trigger = screen.getByText(/Scenario Planner/i);
         fireEvent.click(trigger);
         
         expect(screen.getByText(/Upgrade Simulator/i)).toBeInTheDocument();
         
-        // Warten bis der interne API Call durch ist, um "act" Warnung zu vermeiden
+        // Wait for the internal API call to avoid "act" warning
         await waitFor(() => expect(api.getSimulationData).toHaveBeenCalled());
     });
 
-    it('lädt Daten beim Öffnen', async () => {
+    it('loads data when opening', async () => {
         (api.getSimulationData as any).mockResolvedValue(mockSimData);
         (api.getTariffs as any).mockResolvedValue([]);
 
@@ -56,13 +56,13 @@ describe('ScenarioPlanner Component', () => {
             expect(api.getSimulationData).toHaveBeenCalled();
         });
 
-        // Warten bis Ladevorgang abgeschlossen ist, um "act" Warnung zu vermeiden
+        // Wait until loading is finished to avoid "act" warning
         await waitFor(() => {
             expect(screen.queryByText(/Loading historical data/i)).not.toBeInTheDocument();
         });
     });
 
-    it('berechnet Szenario wenn Daten da sind', async () => {
+    it('computes scenario when data is available', async () => {
         (api.getSimulationData as any).mockResolvedValue(mockSimData);
         (api.getTariffs as any).mockResolvedValue([]);
 

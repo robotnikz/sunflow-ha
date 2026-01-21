@@ -5,13 +5,13 @@ import AmortizationWidget from '../components/AmortizationWidget';
 import React from 'react';
 
 describe('AmortizationWidget Component', () => {
-    it('zeigt Platzhalter bei fehlenden Daten', () => {
+    it('shows placeholder when data is missing', () => {
         render(<AmortizationWidget roiData={null} currency="EUR" />);
         expect(screen.getByText(/Amortization Tracker/i)).toBeInTheDocument();
         expect(screen.getByText(/Configure your system/i)).toBeInTheDocument();
     });
 
-    it('zeigt ROI Daten korrekt an', () => {
+    it('shows ROI data correctly', () => {
         const mockRoi = {
             totalInvested: 10000,
             totalReturned: 2500,
@@ -27,7 +27,7 @@ describe('AmortizationWidget Component', () => {
         expect(screen.getByText(/10[.,]000/)).toBeInTheDocument(); // Invested
     });
 
-    it('zeigt "Paid Off" Status an', () => {
+    it('shows "Paid Off" status', () => {
         const mockRoi = {
             totalInvested: 10000,
             totalReturned: 12000,

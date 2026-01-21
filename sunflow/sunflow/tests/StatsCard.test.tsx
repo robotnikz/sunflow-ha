@@ -6,29 +6,29 @@ import { Zap } from 'lucide-react';
 import React from 'react';
 
 describe('StatsCard Component', () => {
-    it('rendert Titel und Wert korrekt', () => {
+    it('renders title and value correctly', () => {
         render(
             <StatsCard 
-                title="Produktion" 
+                title="Production" 
                 value="5.0 kWh" 
                 icon={<Zap size={16} />} 
                 valueColor="text-yellow-400" 
             />
         );
 
-        expect(screen.getByText('Produktion')).toBeInTheDocument();
+        expect(screen.getByText('Production')).toBeInTheDocument();
         expect(screen.getByText('5.0 kWh')).toBeInTheDocument();
     });
 
-    it('zeigt Subtext an wenn vorhanden', () => {
+    it('shows subtext when provided', () => {
         render(
             <StatsCard 
                 title="Test" 
                 value="100" 
                 icon={<Zap size={16} />} 
-                subValue="Details hier"
+                subValue="Details here"
             />
         );
-        expect(screen.getByText('Details hier')).toBeInTheDocument();
+        expect(screen.getByText('Details here')).toBeInTheDocument();
     });
 });

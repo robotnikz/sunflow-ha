@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
 import * as api from '../services/api';
 
-// 1. Wir mocken das ganze API-Modul, damit wir keine echten Netzwerk-Requests machen
+// Mock the entire API module so we do not perform real network requests.
 vi.mock('../services/api');
 
 describe('SunFlow App Integration', () => {
@@ -11,20 +11,19 @@ describe('SunFlow App Integration', () => {
     vi.clearAllMocks();
   });
 
-  it('zeigt den Ladebildschirm beim Start', async () => {
-    // Wir lassen die Promises ungelöst oder lösen sie langsam auf,
-    // um den initialen Zustand zu sehen
+  it('shows the loading screen on startup', async () => {
+    // Resolve promises (or resolve slowly) to observe the initial state
     (api.getConfig as any).mockResolvedValue({}); 
     (api.getSystemInfo as any).mockResolvedValue({});
 
     render(<App />);
     
-    // Prüfen auf Text, der nur im Ladezustand da ist
+    // Check for text that appears only in the loading state
     expect(await screen.findByText(/Connecting to Fronius Inverter/i)).toBeInTheDocument();
   });
 
-  it('lädt das Dashboard, wenn Konfiguration vorhanden ist', async () => {
-    // 2. Wir definieren Test-Daten, die die API zurückgeben soll
+  it('loads the dashboard when configuration is present', async () => {
+    // Define test data that the API should return
     const mockConfig = { 
         inverterIp: '192.168.0.50', 
         currency: 'EUR', 
@@ -39,24 +38,24 @@ describe('SunFlow App Integration', () => {
         selfConsumption: 20
     };
 
-    // 3. Mocks verbinden
+    // Wire mocks
     (api.getConfig as any).mockResolvedValue(mockConfig);
     (api.getSystemInfo as any).mockResolvedValue({ version: '1.0.0', updateAvailable: false });
     (api.getRealtimeData as any).mockResolvedValue(mockRealtimeData);
     
-    // Leere Dummies für die Charts, damit nichts crasht
+    // Empty chart dummies so nothing crashes
     (api.getHistory as any).mockResolvedValue({ chart: [], stats: { production: 0, consumption: 0, imported: 0, exported: 0, costSaved: 0, earnings: 0 } });
     (api.getRoiData as any).mockResolvedValue({ totalInvested: 0, roiPercent: 0 });
     (api.getForecast as any).mockResolvedValue({ forecasts: [] });
 
     render(<App />);
 
-    // 4. Warten, bis der Titel "SunFlow" erscheint (Laden beendet)
+    // Wait until the title "SunFlow" appears (loading finished)
     await waitFor(() => {
         expect(screen.getByText(/SunFlow/i)).toBeInTheDocument();
     });
 
-    // Prüfen, ob der Settings-Button gerendert wurde (Teil des Dashboards)
+    // Verify the Settings button is rendered (part of the dashboard)
     expect(screen.getByTitle(/Settings/i)).toBeInTheDocument();
   });
 });

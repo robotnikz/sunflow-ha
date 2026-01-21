@@ -24,12 +24,12 @@ vi.mock('recharts', async () => {
 describe('BatteryHealthWidget', () => {
   const nominalCapacity = 10; // 10 kWh
 
-  it('zeigt "Not enough data" wenn keine Datenpunkte vorhanden sind', () => {
+  it('shows "Not enough data" when there are no data points', () => {
     render(<BatteryHealthWidget data={null} nominalCapacity={nominalCapacity} />);
     expect(screen.getByText(/Not enough data yet/i)).toBeInTheDocument();
   });
 
-  it('zeigt Status "Excellent" bei hohem SOH (>90%)', () => {
+  it('shows status "Excellent" when SOH is high (>90%)', () => {
     const mockData: BatteryHealthData = {
         dataPoints: [{ date: '2023-01-01', efficiency: 95, estimatedCapacity: 9.8, chargeCycles: 1 }],
         averageEfficiency: 95,
@@ -42,7 +42,7 @@ describe('BatteryHealthWidget', () => {
     expect(screen.getByText('9.8')).toBeInTheDocument(); // Capacity Display
   });
 
-  it('zeigt Status "Degrading" bei mittlerem SOH (<80%)', () => {
+  it('shows status "Degrading" when SOH is medium (<80%)', () => {
     const mockData: BatteryHealthData = {
         dataPoints: [{ date: '2023-01-01', efficiency: 90, estimatedCapacity: 7.5, chargeCycles: 1 }],
         averageEfficiency: 90,
@@ -54,7 +54,7 @@ describe('BatteryHealthWidget', () => {
     expect(screen.getByText('Degrading')).toBeInTheDocument();
   });
 
-  it('zeigt Status "Poor" bei kritischem SOH (<70%)', () => {
+  it('shows status "Poor" when SOH is critical (<70%)', () => {
     const mockData: BatteryHealthData = {
         dataPoints: [{ date: '2023-01-01', efficiency: 80, estimatedCapacity: 6.0, chargeCycles: 1 }],
         averageEfficiency: 80,

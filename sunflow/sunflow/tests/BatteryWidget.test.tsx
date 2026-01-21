@@ -8,13 +8,13 @@ import React from 'react';
 import { Battery } from 'lucide-react';
 
 describe('BatteryWidget Component', () => {
-    it('zeigt SOC korrekt an', () => {
+    it('shows SOC correctly', () => {
         // Power=0 -> Idle
         render(<BatteryWidget soc={75} power={0} state="idle" capacity={10} />);
         expect(screen.getByText('75')).toBeInTheDocument();
     });
 
-    it('zeigt Status Text an (Charging)', () => {
+    it('shows status text (Charging)', () => {
         // Power < -10 (Charging)
         render(<BatteryWidget soc={50} power={-500} state="charging" capacity={10} />);
         // Text might be dynamic or inside component, checking based on "Charging" text presence
@@ -28,13 +28,13 @@ describe('BatteryWidget Component', () => {
         expect(screen.getByText(/Charging/i)).toBeInTheDocument();
     });
 
-    it('zeigt Status Text an (Discharging)', () => {
+    it('shows status text (Discharging)', () => {
         // Power > 10 (Discharging)
         render(<BatteryWidget soc={50} power={500} state="discharging" capacity={10} />);
         expect(screen.getByText(/Discharging/i)).toBeInTheDocument();
     });
 
-    it('reagiert auf leeren SOC', () => {
+    it('handles empty SOC', () => {
         render(<BatteryWidget soc={0} power={0} state="idle" capacity={10} />);
         expect(screen.getByText(/0/)).toBeInTheDocument();
     });

@@ -1,7 +1,7 @@
 name: Sunflow
 slug: sunflow
 version: "0.1.0"
-description: "Sunflow Dashboard (Solar Energy)"
+description: "Solar energy dashboard with Ingress UI and a local REST API"
 url: "https://github.com/robotnikz/sunflow-ha"
 arch:
   - amd64
@@ -16,6 +16,9 @@ ingress_port: 3000
 ingress_entry: /
 panel_icon: mdi:solar-power
 panel_title: Sunflow
+
+# Supervisor watchdog: periodically checks this URL and restarts the add-on if it fails.
+watchdog: "http://[HOST]:[PORT:3000]/api/info"
 
 # Used in some UI contexts; with ingress enabled, users typically open via the sidebar.
 webui: "http://[HOST]:[PORT:3000]/"

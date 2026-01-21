@@ -32,7 +32,7 @@ describe('SettingsModal Interaction', () => {
     (api.getExpenses as any).mockResolvedValue([]);
   });
 
-  it('lädt mit korrekten Initialwerten', async () => {
+  it('loads with correct initial values', async () => {
     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
     await waitFor(() => {
       expect(screen.getByDisplayValue('1.2.3.4')).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe('SettingsModal Interaction', () => {
     expect(screen.getByText(/Notifications/i)).toBeInTheDocument();
   });
 
-  it('wechselt Tabs korrekt', async () => {
+  it('switches tabs correctly', async () => {
     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
     const notifTab = screen.getByText(/Notifications/i);
     fireEvent.click(notifTab);
@@ -49,7 +49,7 @@ describe('SettingsModal Interaction', () => {
     });
   });
 
-  it('ruft onSave mit aktualisierten Daten auf', async () => {
+  it('calls onSave with updated data', async () => {
     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
     const ipInput = screen.getByDisplayValue('1.2.3.4');
     fireEvent.change(ipInput, { target: { value: '192.168.1.100' } });
@@ -62,40 +62,40 @@ describe('SettingsModal Interaction', () => {
   });
 
 
-  it('konfiguriert Battery Health Notification korrekt', async () => {
+  it('configures battery health notification correctly', async () => {
     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
     
-    // 1. Zu Notifications wechseln
+    // 1. Switch to Notifications
     fireEvent.click(screen.getByText(/Notifications/i));
 
-    // 2. Checkbox für Battery Health finden und aktivieren
+    // 2. Find and enable the Battery Health checkbox
     const checkboxes = screen.getAllByRole('checkbox');
-    // Die Battery Health Checkbox ist die 4. in der Liste (Errors, Full, Empty, Health, Smart)
+    // Battery Health checkbox is the 4th in the list (Errors, Full, Empty, Health, Smart)
     const healthCheckbox = checkboxes[3]; 
     
     fireEvent.click(healthCheckbox);
 
-    // 3. Prüfen ob die Zusatzfelder erscheinen (Alert Threshold)
+    // 3. Verify additional fields appear (Alert Threshold)
     await waitFor(() => {
         expect(screen.getByText(/Alert Threshold/i)).toBeInTheDocument();
     });
 
-    // 4. Werte ändern
+    // 4. Change values
     const thresholdInput = screen.getByDisplayValue('75');
     fireEvent.change(thresholdInput, { target: { value: '80' } });
 
-    // 5. Speichern
+    // 5. Save
     fireEvent.click(screen.getByRole('button', { name: /Save Notifications/i }));
 
-    // 6. Validierung
+    // 6. Validate
     expect(onSaveMock).toHaveBeenCalled();
     const savedConfig = onSaveMock.mock.calls[0][0];
     expect(savedConfig.notifications.triggers.batteryHealth).toBe(true);
     expect(savedConfig.notifications.sohThreshold).toBe(80);
   });
 
-  it('zeigt Calibration Tab und berechnet Summen korrekt', async () => {
-      // Config mit DB Totals
+    it('shows Calibration tab and calculates totals correctly', async () => {
+      // Config with DB totals
       const configWithDb = {
           ...mockConfig,
           initialValues: { production: 1000, import: 500, export: 200, financialReturn: 50 },
@@ -104,8 +104,8 @@ describe('SettingsModal Interaction', () => {
 
       const { container } = render(<SettingsModal currentConfig={configWithDb} onSave={onSaveMock} onClose={onCloseMock} />);
       
-      // Suche den Tab für History/Calibration. 
-      // Der Text im Button ist "Calibration" (Zeile 413), nicht "History" (Icon)!
+      // Find the tab for History/Calibration.
+      // The button text is "Calibration", not "History" (icon).
       const calibTab = screen.getAllByRole('button', { name: /Calibration/i })[0]; 
       fireEvent.click(calibTab);
 
@@ -113,15 +113,15 @@ describe('SettingsModal Interaction', () => {
           expect(screen.getByText(/Pre-App History/i)).toBeInTheDocument();
       });
 
-      // Prüfen ob Summen korrekt angezeigt werden (Initial + DB)
+      // Verify totals are displayed correctly (initial + DB)
       // Production: 1000 + 5000 = 6,000
       // Note: Value is inside a div along with a span "kWh", so strict string match fails. Use Regex.
       // Locale might vary, so we match 6 followed by any separator and 000
       expect(screen.getByText(/6[,.\s]?000/)).toBeInTheDocument();
       
-      // Eingabewert ändern (Manual Offset)
+      // Change input value (manual offset)
       const prodInputs = container.querySelectorAll('input[type="number"]');
-      // Es gibt viele Inputs, wir suchen den für Production Offset (Value = 1000)
+      // There are many inputs; find the one for Production offset (value = 1000)
       const offsetInput = Array.from(prodInputs).find(i => (i as HTMLInputElement).value === '1000');
       
       if(offsetInput) {
@@ -132,20 +132,20 @@ describe('SettingsModal Interaction', () => {
               expect(onSaveMock).toHaveBeenCalled();
           });
           
-          // Check ob neuer Wert (2000) im Save-Call war
+          // Verify the new value (2000) is in the save call
           expect(onSaveMock.mock.calls[0][0].initialValues.production).toBe(2000);
       } else {
           throw new Error("Offset Input not found");
       }
   });
 
-  it('navigiert zum Import Tab', async () => {
+  it('navigates to the import tab', async () => {
       render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
       const importTab = screen.getByRole('button', { name: /Data Import/i });
       fireEvent.click(importTab);
       
       await waitFor(() => {
-          // Prüft ob CsvImporter gerendert wird (Key Text)
+          // Verify CsvImporter is rendered (key text)
           expect(screen.getAllByText(/Click to upload/i).length).toBeGreaterThan(0);
       });
   });

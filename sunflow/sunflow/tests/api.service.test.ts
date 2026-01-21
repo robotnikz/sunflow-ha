@@ -26,7 +26,7 @@ describe('services/api.ts (unit)', () => {
     await getHistory('day', undefined, undefined, 7);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/history?range=day&offset=7');
+    expect(fetchMock.mock.calls[0][0]).toBe('api/history?range=day&offset=7');
   });
 
   it('builds history URL for custom range including start/end', async () => {
@@ -38,7 +38,7 @@ describe('services/api.ts (unit)', () => {
     await getHistory('custom', '2026-01-01', '2026-01-02', 0);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0][0]).toBe('/api/history?range=custom&offset=0&start=2026-01-01&end=2026-01-02');
+    expect(fetchMock.mock.calls[0][0]).toBe('api/history?range=custom&offset=0&start=2026-01-01&end=2026-01-02');
   });
 
   it('saveConfig POSTs JSON and throws on non-OK', async () => {
@@ -48,7 +48,7 @@ describe('services/api.ts (unit)', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, opts] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/config');
+    expect(url).toBe('api/config');
     expect(opts).toMatchObject({ method: 'POST' });
     expect((opts as any).headers).toMatchObject({ 'Content-Type': 'application/json' });
   });
@@ -66,7 +66,7 @@ describe('services/api.ts (unit)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [url, opts] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/preview-csv');
+    expect(url).toBe('api/preview-csv');
     expect((opts as any).method).toBe('POST');
     expect((opts as any).body).toBeInstanceOf(FormData);
 
@@ -87,7 +87,7 @@ describe('services/api.ts (unit)', () => {
     expect(res).toEqual({ success: true, imported: 1, failed: 0 });
 
     const [url, opts] = fetchMock.mock.calls[0];
-    expect(url).toBe('/api/import-csv');
+    expect(url).toBe('api/import-csv');
     expect((opts as any).method).toBe('POST');
 
     const body = (opts as any).body as FormData;

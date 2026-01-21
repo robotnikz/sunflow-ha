@@ -48,35 +48,35 @@ describe('Dashboard Component', () => {
     });
   });
 
-  it('zeigt Skeleton Loader, solange Historie lädt', async () => {
-    // Wir lassen getHistory hängen (Promise ohne Resolve), um den Loading State zu erzwingen
+  it('shows skeleton loader while history is loading', async () => {
+    // Keep getHistory pending (never resolves) to force the loading state
     (api.getHistory as any).mockReturnValue(new Promise(() => {}));
 
     render(<Dashboard data={mockData} config={mockConfig} error={null} refreshTrigger={0} />);
     
-    // PowerFlow ist Teil der Daten, die schon da sind, sollte also sichtbar sein
+    // PowerFlow is part of already-available data, so it should be visible
     expect(screen.getByText(/Live Power Flow/i)).toBeInTheDocument();
     
-    // Die Charts warten auf History -> Skeleton sollte da sein. 
+    // Charts wait for history -> skeleton should be present.
     await waitFor(() => {
       const skeletons = document.querySelectorAll('.animate-pulse');
       expect(skeletons.length).toBeGreaterThan(0);
     });
   });
 
-  it('zeigt Widget-Inhalte korrekt an, wenn Daten geladen sind', async () => {
+  it('shows widget contents correctly when data is loaded', async () => {
     render(<Dashboard data={mockData} config={mockConfig} error={null} refreshTrigger={0} />);
 
     await waitFor(() => {
         expect(screen.getByText(/Return on Investment/i)).toBeInTheDocument();
     });
 
-    // Prüfen ob Live-Daten (5000W PV) gerendert werden (im PowerFlow oder Stats)
-    // PowerFlow rendert "5000 W"
+    // Verify live data (5000W PV) is rendered (PowerFlow or stats)
+    // PowerFlow renders "5000 W"
     expect(screen.getByText('5000 W')).toBeInTheDocument();
   });
 
-  it('zeigt Fehlermeldung oben an, wenn prop error gesetzt ist', async () => {
+  it('shows error message at the top when error prop is set', async () => {
     render(<Dashboard data={mockData} config={mockConfig} error="Connection Lost" refreshTrigger={0} />);
     await waitFor(() => {
       expect(screen.getByText('Connection Lost')).toBeInTheDocument();

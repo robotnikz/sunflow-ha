@@ -32,12 +32,12 @@ describe('CsvImporter Component', () => {
         vi.clearAllMocks();
     });
 
-    it('beginnt im Upload-Schritt', () => {
+    it('starts in the upload step', () => {
         render(<CsvImporter />);
         expect(screen.getByText(/Click to upload CSV/i)).toBeInTheDocument();
     });
 
-    it('wechselt zu Step 2 (Mapping) nach Dateiwahl', async () => {
+    it('moves to step 2 (mapping) after selecting a file', async () => {
         const { container } = render(<CsvImporter />);
         
         // Mock API Response
@@ -61,10 +61,10 @@ describe('CsvImporter Component', () => {
         const input = container.querySelector('input[type="file"]');
         
         if (input) {
-            // Simuliere Upload
+            // Simulate upload
             fireEvent.change(input, { target: { files: [file] } });
             
-            // Warten auf API Call und State Change
+            // Wait for API call and state change
             await waitFor(() => {
                 // Check for UI element unique to Step 2 (Mapping)
                 // Note: "Configure Column Mapping" text was removed/changed. 
@@ -76,7 +76,7 @@ describe('CsvImporter Component', () => {
         }
     });
 
-    it('führt Import aus wenn Mapping gesetzt ist', async () => {
+    it('runs import when mapping is set', async () => {
         // Mock API Response
         vi.mocked(api.previewCsv).mockResolvedValue({
             headers: ['timestamp', 'power'],
@@ -104,17 +104,17 @@ describe('CsvImporter Component', () => {
             expect(screen.getByText(/Timestamp \(Required\)/i)).toBeInTheDocument();
         });
 
-        // Mapping setzen (Select Timestamp)
+        // Set mapping (select Timestamp)
         const selects = screen.getAllByRole('combobox');
         
-        // Wir müssen sicherstellen, dass die Optionen auch geladen sind (aus Meta fields des Mocks)
+        // Ensure options are loaded (from meta fields in the mock)
         fireEvent.change(selects[0], { target: { value: 'timestamp' } }); 
 
-        // Import Button klicken
+        // Click Import button
         const importBtn = screen.getByRole('button', { name: /Start Import/i });
         fireEvent.click(importBtn);
 
-        // API Call Check
+        // API call check
         await waitFor(() => {
            expect(api.importCsv).toHaveBeenCalled();
         });

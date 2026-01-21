@@ -18,7 +18,7 @@ describe('PowerFlow Component', () => {
         selfConsumption: 60
     };
 
-    it('zeigt alle Leistungswerte korrekt an', () => {
+    it('shows all power values correctly', () => {
         render(<PowerFlow power={mockData.power} soc={mockData.battery.soc} />);
         
         // Check PV
@@ -29,7 +29,7 @@ describe('PowerFlow Component', () => {
         
     });
 
-    it('zeigt Status Idle bei 0 W PV', () => {
+    it('shows idle status at 0 W PV', () => {
         const idlePower = { ...mockData.power, pv: 0 };
         render(<PowerFlow power={idlePower} soc={50} />);
         

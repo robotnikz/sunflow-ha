@@ -1,0 +1,6 @@
+{
+  "name": "Sunflow",
+  "content_in_root": false,
+  "domains": ["sunflow"],
+  "render_readme": true
+}

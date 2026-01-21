@@ -23,11 +23,11 @@ describe('Chart Components', () => {
         { timestamp: '2023-01-01 13:00', production: 1200, consumption: 600, grid: -600, battery: 0 }
     ];
 
-    it('EnergyChart rendert ohne Fehler', () => {
+    it('EnergyChart renders without errors', () => {
         render(<EnergyChart history={mockData} timeRange="day" />);
     });
 
-    it('BatteryChart rendert ohne Fehler', () => {
+    it('BatteryChart renders without errors', () => {
         const batData = [
             { timestamp: '2023-01-01 12:00', soc: 50, battery: 1000 },
             { timestamp: '2023-01-01 13:00', soc: 60, battery: 1000 }
@@ -35,7 +35,7 @@ describe('Chart Components', () => {
         render(<BatteryChart history={batData} timeRange="day" />);
     });
     
-    it('EfficiencyChart rendert ohne Fehler', () => {
+    it('EfficiencyChart renders without errors', () => {
          // Fix: EfficiencyChart expects history prop based on failure 'history.length'
          // Assuming it takes same shape as others or likely the dataPoints array directly?
          // Let's assume it takes 'history' prop which is the array.

@@ -22,3 +22,23 @@ Sunflow stores its database and uploads in the add-on `/data` directory, which i
 ## Integration (optional)
 
 If you also install the Sunflow integration (HACS/custom component), it can auto-connect to the locally installed add-on on supervised installations.
+
+## Development checks
+
+### Ingress build check (recommended)
+
+Validates that the production build uses **relative** asset URLs (required for Home Assistant Ingress).
+
+- From `sunflow/sunflow/` run: `npm run test:ingress`
+
+### Add-on Docker smoke test (optional, requires Docker)
+
+Builds the Home Assistant add-on container and verifies the backend becomes ready by calling `/api/info`.
+
+- From the repo root run: `powershell -File .\scripts\addon_smoke_test.ps1`
+
+## HAOS / Supervised test plan
+
+For a full end-to-end validation on a real Home Assistant OS / Supervised system, follow:
+
+- `docs/HAOS_TESTPLAN.md`

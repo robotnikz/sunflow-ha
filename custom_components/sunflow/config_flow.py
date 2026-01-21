@@ -8,7 +8,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SunflowClient
 from .const import CONF_ADMIN_TOKEN, CONF_BASE_URL, DEFAULT_LOCAL_ADDON_PORT, DOMAIN
-from .supervisor import async_get_addon_info, async_get_sunflow_addon_slug, async_is_supervised
+from .supervisor import async_get_sunflow_addon_slug, async_is_supervised
 
 
 class SunflowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -70,20 +70,13 @@ class SunflowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             try:
                 addon_slug = await async_get_sunflow_addon_slug(self.hass)
-                addon_info = await async_get_addon_info(self.hass, addon_slug)
             except Exception:
                 errors["base"] = "addon_not_found"
             else:
-                # Prefer a stable, Supervisor-reported address, but fall back to
-                # a reasonable default.
-                host = addon_info.get("hostname") or addon_info.get("ip_address")
-                if isinstance(host, str):
-                    host = host.strip()
-                if not host:
-                    # Last-resort: the internal DNS name is usually based on repository+slug.
-                    host = addon_slug.replace("_", "-")
-
-                base_url = f"http://{host}:{DEFAULT_LOCAL_ADDON_PORT}"
+                # On HA OS / Supervised, add-ons are reachable from HA Core via Docker DNS.
+                # The canonical hostname is: addon_<full_addon_slug>
+                # (full slug can include repository prefix).
+                base_url = f"http://addon_{addon_slug}:{DEFAULT_LOCAL_ADDON_PORT}"
 
                 session = async_get_clientsession(self.hass)
                 client = SunflowClient(session=session, base_url=base_url, admin_token=admin_token)

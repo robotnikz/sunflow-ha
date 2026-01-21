@@ -5,13 +5,13 @@ import WeatherWidget from '../components/WeatherWidget';
 import React from 'react';
 
 describe('WeatherWidget Component', () => {
-    it('zeigt Placeholder wenn keine Daten vorhanden', () => {
+    it('shows placeholder when no data is available', () => {
         const mockConfig = { inverterIp: '1.2.3', currency: 'EUR' }; // Min config
         const { getByText } = render(<WeatherWidget config={mockConfig} forecast={null} weatherData={null} solcastRateLimited={false} />);
         expect(getByText(/Add location in settings/i)).toBeInTheDocument();
     });
 
-    it('zeigt Temperatur und Wetter Code an', () => {
+    it('shows temperature and weather status', () => {
         const mockConfig = { inverterIp: '1.2.3', currency: 'EUR', latitude: '50', longitude: '10' };
         const mockWeather = {
             current: {
@@ -25,7 +25,7 @@ describe('WeatherWidget Component', () => {
         expect(screen.getByText(/22.5°C/)).toBeInTheDocument();
     });
     
-    it('zeigt Nacht-Modus an', () => {
+    it('shows night mode', () => {
         const mockConfig = { inverterIp: '1.2.3', currency: 'EUR', latitude: '50', longitude: '10' };
         const mockWeather = {
             current: {

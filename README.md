@@ -1,6 +1,8 @@
-# Sunflow for Home Assistant (Addon + Integration)
+# Sunflow for Home Assistant (Add-on + Integration)
 
-This repository provides Sunflow as a **Home Assistant Add-on** (Ingress UI) and an optional **Integration**.
+This repository provides Sunflow as a **Home Assistant Add-on** (Ingress UI) and an optional **Home Assistant Integration** (sensors + config flow).
+
+Versioning note: the Home Assistant add-on and integration use independent versions (this repo release), and the bundled Sunflow app has its own upstream version.
 
 ## Install (Add-on)
 
@@ -8,29 +10,37 @@ This repository provides Sunflow as a **Home Assistant Add-on** (Ingress UI) and
 2. Menu (top right) → **Repositories**.
 3. Add: `https://github.com/robotnikz/sunflow-ha`
 4. Install **Sunflow**.
-5. Optional: set `admin_token` in the add-on configuration.
+5. (Optional) Set `admin_token` in the add-on configuration.
 6. Start the add-on.
 7. Open the UI via the **Sunflow** sidebar entry (Ingress).
+
+For an end-to-end checklist on real HAOS / Supervised, see: [docs/HAOS_TESTPLAN.md](docs/HAOS_TESTPLAN.md).
+
+## Install (Integration via HACS, optional)
+
+This is recommended if you want entities/sensors inside Home Assistant.
+
+1. Install HACS.
+2. HACS → **Integrations** → menu → **Custom repositories**.
+3. Add `https://github.com/robotnikz/sunflow-ha` as type **Integration**.
+4. Install **Sunflow**.
+5. Restart Home Assistant.
+6. Settings → **Devices & services** → **Add integration** → **Sunflow**.
+
+On supervised installations (HAOS / HA Supervised), the integration can auto-connect to the locally installed Sunflow add-on via the Supervisor network (no host port exposure required).
 
 ## Layout
 
 - `repository.yaml` — Home Assistant Add-on repository metadata
 - `sunflow/` — Home Assistant Add-on (Supervisor)
-- `upstream/` — upstream app source copy (Vite frontend + Node backend)
+- `sunflow/sunflow/` — Sunflow app source (Vite frontend + Node backend)
 - `custom_components/sunflow/` — Home Assistant Integration (HACS)
+- `scripts/` — smoke tests (Docker-based)
+- `docs/` — HAOS/Supervised test plan and notes
 
-## Goals
+## Development / CI
 
-- Provide Sunflow as a Home Assistant **Add-on** (with Ingress UI)
-- Provide a Home Assistant **Integration** to:
-  - configure/connect to the Sunflow API
-  - expose key sensors/entities
-  - optionally register services (e.g. refresh, test notification)
+- Ingress build check: run `npm run test:ingress` from `sunflow/sunflow/`.
+- Add-on smoke test (Docker): run `powershell -File .\scripts\addon_smoke_test.ps1` from repo root.
 
-On supervised Home Assistant installations (HA OS / HA Supervised), the integration can auto-connect to the locally installed Sunflow add-on via the Supervisor network (no host port exposure required).
-
-## Development
-
-This repo is intended to be used as a packaging/workbench.
-
-Repo (packaging): https://github.com/robotnikz/sunflow-ha
+CI runs both checks via `.github/workflows/ci.yml`.
