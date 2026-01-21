@@ -2,9 +2,24 @@
 import { InverterData, SystemConfig, HistoryData, TimeRange, Tariff, Expense, RoiData, SystemInfo, ForecastData, BatteryHealthData, SimulationDataPoint, AwattarComparisonResponse, AwattarComparePeriod } from '../types';
 
 // IMPORTANT (Home Assistant Ingress):
-// Use *relative* URLs so requests stay under the ingress path.
-// Absolute paths like `/api/...` would hit Home Assistant Core instead.
-const API_BASE = '';
+// Use URLs that stay under the ingress path.
+// Absolute paths like `/api/...` would hit Home Assistant Core instead, so when
+// running under ingress we *prefix* requests with `/api/hassio_ingress/<token>/`.
+//
+// Why not plain relative `api/...`?
+// Some HA deployments load the UI under deeper paths; a plain relative URL can
+// resolve to the wrong location and return 404.
+const API_BASE = (() => {
+  try {
+    if (typeof window === 'undefined') return '';
+    const pathname = String(window.location?.pathname || '');
+    const m = /^(.*\/api\/hassio_ingress\/[^\/]+)(?:\/|$)/.exec(pathname);
+    if (m && m[1]) return `${m[1]}/`;
+    return '';
+  } catch {
+    return '';
+  }
+})();
 
 const apiUrl = (path: string): string => {
   const p = path.startsWith('/') ? path.slice(1) : path;
