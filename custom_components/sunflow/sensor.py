@@ -17,6 +17,7 @@ from .const import (
     CONF_ADMIN_TOKEN,
     CONF_BASE_URL,
     CONF_SCAN_INTERVAL_SECONDS,
+    DEFAULT_OPTIONS_SCAN_INTERVAL_SECONDS,
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DOMAIN,
 )
@@ -53,7 +54,7 @@ async def async_setup_entry(
         realtime = await client.get_realtime()
         return {"info": cached_info, "realtime": realtime}
 
-    scan_interval_seconds = entry.options.get(CONF_SCAN_INTERVAL_SECONDS, DEFAULT_SCAN_INTERVAL_SECONDS)
+    scan_interval_seconds = entry.options.get(CONF_SCAN_INTERVAL_SECONDS, DEFAULT_OPTIONS_SCAN_INTERVAL_SECONDS)
     try:
         scan_interval_seconds = int(scan_interval_seconds)
     except (TypeError, ValueError):

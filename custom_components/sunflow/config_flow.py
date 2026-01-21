@@ -12,6 +12,7 @@ from .const import (
     CONF_BASE_URL,
     CONF_SCAN_INTERVAL_SECONDS,
     DEFAULT_LOCAL_ADDON_PORT,
+    DEFAULT_OPTIONS_SCAN_INTERVAL_SECONDS,
     DEFAULT_SCAN_INTERVAL_SECONDS,
     DOMAIN,
     SCAN_INTERVAL_CHOICES_SECONDS,
@@ -170,7 +171,10 @@ class SunflowOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current = self._config_entry.options.get(CONF_SCAN_INTERVAL_SECONDS, DEFAULT_SCAN_INTERVAL_SECONDS)
+        current = self._config_entry.options.get(CONF_SCAN_INTERVAL_SECONDS, DEFAULT_OPTIONS_SCAN_INTERVAL_SECONDS)
+        # Backwards compatibility: if something stored an unexpected value, fall back safely.
+        if current not in SCAN_INTERVAL_CHOICES_SECONDS:
+            current = DEFAULT_SCAN_INTERVAL_SECONDS
         schema = vol.Schema(
             {
                 vol.Optional(

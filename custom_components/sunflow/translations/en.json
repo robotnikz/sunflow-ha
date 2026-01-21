@@ -39,7 +39,7 @@
     "step": {
       "init": {
         "title": "Sunflow options",
-        "description": "Adjust how often Home Assistant polls Sunflow for realtime data.",
+        "description": "Adjust how often Home Assistant polls Sunflow for realtime data. Note: 5 seconds increases network traffic and load.",
         "data": {
           "scan_interval_seconds": "Polling interval (seconds)"
         }

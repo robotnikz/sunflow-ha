@@ -5,6 +5,12 @@ The bundled upstream Sunflow app has its own release/versioning.
 
 Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
+## 0.1.11
+
+- Integration: default polling interval is now 10s for better automations/notifications (configurable via Options).
+- Integration: Options screen warns that 5s polling increases traffic/load.
+- HACS: add repository `icon.png`/`logo.png` so the Sunflow logo is shown in the HACS UI.
+
 ## 0.1.10
 
 - Integration: add an Options screen to configure the polling interval (default still 30s unless changed by the user).
