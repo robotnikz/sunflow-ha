@@ -31,6 +31,8 @@ Add-on options:
 - `admin_token` (optional): protects admin/write endpoints if you enable them
 - `cors_origin` (optional): set only if you intentionally expose the API to other origins
 
+If you set `admin_token`, open **System Settings** in the Sunflow UI and enter the same token in **Admin Token (optional)**. This is stored locally in your browser and is used to authenticate protected actions (e.g. saving settings).
+
 ## Troubleshooting
 
 - If the UI does not load in Ingress, restart the add-on and check the add-on logs.

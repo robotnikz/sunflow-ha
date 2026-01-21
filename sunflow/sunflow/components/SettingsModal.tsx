@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { SystemConfig, Tariff, Expense, Appliance } from '../types';
 import { X, Save, Plus, Trash2, Calendar, DollarSign, Euro, PoundSterling, MapPin, Zap, History, HelpCircle, Calculator, CheckCircle2, AlertTriangle, ArrowRight, TrendingUp, SunMedium, Battery, Edit, Link2, Send, Sliders, Plug, Activity, Scale, Check, Bell, Upload } from 'lucide-react';
-import { getTariffs, addTariff, deleteTariff, getExpenses, addExpense, deleteExpense, getConfig } from '../services/api';
+import { getTariffs, addTariff, deleteTariff, getExpenses, addExpense, deleteExpense, getConfig, getAdminToken, setAdminToken, testNotification } from '../services/api';
 import { ICON_MAP } from './SmartRecommendations';
 import CsvImporter from './CsvImporter';
 
@@ -58,6 +58,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
 
       return config;
   });
+
+    const [adminTokenDraft, setAdminTokenDraft] = useState<string>(() => getAdminToken() ?? '');
 
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -208,6 +210,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
 
   const handleConfigSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+        setAdminToken(adminTokenDraft);
     // Ensure numbers are numbers before saving
     const cleanedConfig = {
         ...formData,
@@ -239,13 +242,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
       }
       
       try {
-          const res = await fetch('/api/test-notification', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({})
-          });
-          if(res.ok) alert("Test notification sent! Check your Discord channel.");
-          else throw new Error("Failed");
+          await testNotification();
+          alert("Test notification sent! Check your Discord channel.");
       } catch(e) {
           alert("Failed to send test notification. Check the URL and server logs.");
       }
@@ -500,6 +498,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
                         <option value="GBP">GBP (£)</option>
                     </select>
                   </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">Admin Token (optional)</label>
+                                        <input
+                                            type="password"
+                                            value={adminTokenDraft}
+                                            onChange={(e) => setAdminTokenDraft(e.target.value)}
+                                            placeholder="Only needed if the add-on admin_token option is set"
+                                            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">Stored locally in your browser and sent as a Bearer token for protected actions (saving settings, tariffs, expenses, test notification).</p>
+                                    </div>
               </div>
               <div className="space-y-4 pt-4">
                  <h3 className="text-slate-300 font-bold border-b border-slate-700 pb-2 flex items-center gap-2"><MapPin size={18}/> Location & Capacity</h3>

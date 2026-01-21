@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Fix saving settings in the Ingress UI when the add-on `admin_token` option is set (frontend now supports Bearer token auth stored locally).
+- Fix notification test call for Home Assistant Ingress (no more absolute `/api/...` path).
+
 ## 0.1.2
 
 - Fix add-on install/build in Home Assistant Supervisor (remove invalid `${BUILD_FROM}` build arg mapping).
