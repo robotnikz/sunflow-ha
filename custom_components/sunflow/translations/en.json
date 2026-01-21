@@ -28,6 +28,7 @@
     },
     "error": {
       "cannot_connect": "Failed to connect to Sunflow.",
+      "unauthorized": "Unauthorized. Check the admin token.",
       "addon_not_found": "Sunflow add-on not found in Supervisor. Install/start the add-on first."
     },
     "abort": {

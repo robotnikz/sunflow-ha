@@ -8,7 +8,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SunflowClient
 from .const import CONF_ADMIN_TOKEN, CONF_BASE_URL, DEFAULT_LOCAL_ADDON_PORT, DOMAIN
-from .supervisor import async_get_sunflow_addon_slug, async_is_supervised
+from .supervisor import async_get_addon_info, async_get_sunflow_addon_slug, async_is_supervised
 
 
 class SunflowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -73,29 +73,71 @@ class SunflowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:
                 errors["base"] = "addon_not_found"
             else:
-                # On HA OS / Supervised, add-ons are reachable from HA Core via Docker DNS.
-                # The canonical hostname is: addon_<full_addon_slug>
-                # (full slug can include repository prefix).
-                base_url = f"http://addon_{addon_slug}:{DEFAULT_LOCAL_ADDON_PORT}"
-
                 session = async_get_clientsession(self.hass)
-                client = SunflowClient(session=session, base_url=base_url, admin_token=admin_token)
 
+                # On HA OS / Supervised, add-ons are reachable from HA Core via Docker DNS.
+                # Unfortunately the exact hostname can vary between installations.
+                # Try a small set of known-good patterns.
+                slug_tail = addon_slug.split("_")[-1] if addon_slug else ""
+                candidates: list[str] = []
+
+                def _add_candidate(host: str) -> None:
+                    h = (host or "").strip()
+                    if not h:
+                        return
+                    url = f"http://{h}:{DEFAULT_LOCAL_ADDON_PORT}"
+                    if url not in candidates:
+                        candidates.append(url)
+
+                # Common patterns:
+                # - <full_slug>:3000 (e.g. a0d7b954_sunflow)
+                # - addon_<full_slug>:3000
+                # - <slug_tail>:3000 (e.g. sunflow)
+                # - addon_<slug_tail>:3000
+                _add_candidate(addon_slug)
+                _add_candidate(f"addon_{addon_slug}")
+                if slug_tail and slug_tail != addon_slug:
+                    _add_candidate(slug_tail)
+                    _add_candidate(f"addon_{slug_tail}")
+
+                # Fallback: use Supervisor info (IP address) when available.
                 try:
-                    info = await client.async_validate()
+                    addon_info = await async_get_addon_info(self.hass, addon_slug)
                 except Exception:
+                    addon_info = {}
+
+                ip_address = addon_info.get("ip_address")
+                if isinstance(ip_address, str) and ip_address.strip():
+                    _add_candidate(ip_address.strip())
+
+                last_exc: Exception | None = None
+                for base_url in candidates:
+                    client = SunflowClient(session=session, base_url=base_url, admin_token=admin_token)
+                    try:
+                        info = await client.async_validate()
+                    except Exception as e:
+                        last_exc = e
+                        # If the add-on is protected, surface the correct error.
+                        # (Currently /api/info is unprotected, but keep this for future-proofing.)
+                        status = getattr(e, "status", None)
+                        if status == 401:
+                            errors["base"] = "unauthorized"
+                            break
+                        continue
+                    else:
+                        title = user_input.get(CONF_NAME) or f"Sunflow ({info.version})"
+                        await self.async_set_unique_id(f"addon:{addon_slug}")
+                        self._abort_if_unique_id_configured()
+                        return self.async_create_entry(
+                            title=title,
+                            data={
+                                CONF_BASE_URL: base_url,
+                                CONF_ADMIN_TOKEN: admin_token or "",
+                            },
+                        )
+
+                if "base" not in errors:
                     errors["base"] = "cannot_connect"
-                else:
-                    title = user_input.get(CONF_NAME) or f"Sunflow ({info.version})"
-                    await self.async_set_unique_id(f"addon:{addon_slug}")
-                    self._abort_if_unique_id_configured()
-                    return self.async_create_entry(
-                        title=title,
-                        data={
-                            CONF_BASE_URL: base_url,
-                            CONF_ADMIN_TOKEN: admin_token or "",
-                        },
-                    )
 
         schema = vol.Schema(
             {

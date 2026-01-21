@@ -9,6 +9,10 @@ Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
 - Fix settings save failing with HTTP 404 under Home Assistant Ingress by deriving the correct ingress base path for API calls.
 
+## 0.1.7
+
+- Integration: improve "Use local add-on" auto-connect by trying multiple Supervisor/Docker hostname patterns (fixes "Failed to connect to Sunflow" on some HA installs).
+
 ## 0.1.5
 
 - Fix settings save error handling when Home Assistant/proxy returns non-JSON responses (avoid `JSON.parse` popup; show useful status/message).
