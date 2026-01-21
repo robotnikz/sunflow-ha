@@ -3,5 +3,3 @@ build_from:
   aarch64: ghcr.io/hassio-addons/base:15.0.7
   armv7: ghcr.io/hassio-addons/base:15.0.7
   armhf: ghcr.io/hassio-addons/base:15.0.7
-args:
-  BUILD_FROM: ${BUILD_FROM}
