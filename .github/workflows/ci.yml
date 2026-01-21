@@ -8,6 +8,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  home-assistant-validation:
+    name: Home Assistant validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: hassfest
+        uses: home-assistant/actions/hassfest@master
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
   patch-layer-guard:
     runs-on: ubuntu-latest
     steps:
@@ -44,7 +56,7 @@ jobs:
           cache-dependency-path: sunflow/sunflow/package-lock.json
       - run: npm ci
       - run: npm run test:ingress
-      - run: npm run test:run -- tests/api.service.test.ts
+      - run: npm run test:run -- tests/api*.test.ts
 
   addon-smoke:
     runs-on: ubuntu-latest

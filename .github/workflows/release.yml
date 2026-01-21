@@ -15,6 +15,19 @@ permissions:
   pull-requests: write
 
 jobs:
+  home-assistant-validation:
+    name: Home Assistant validation
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: hassfest
+        uses: home-assistant/actions/hassfest@master
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
   tests:
     name: Tests (required)
     if: ${{ github.actor != 'github-actions[bot]' }}
@@ -43,7 +56,7 @@ jobs:
         run: |
           npm ci
           npm run test:ingress
-          npm run test:run -- tests/api.service.test.ts
+          npm run test:run -- tests/api*.test.ts
 
       - name: Add-on smoke test (docker build + /api/info)
         env:
@@ -56,7 +69,7 @@ jobs:
   semantic-release:
     name: Semantic Release
     if: ${{ github.actor != 'github-actions[bot]' }}
-    needs: [tests]
+    needs: [home-assistant-validation, tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
