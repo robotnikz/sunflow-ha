@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/robotnikz/sunflow-ha/compare/v1.0.2...v1.0.3) (2026-01-21)
+
+
+### Bug Fixes
+
+* **release:** avoid duplicate notes ([d80a86d](https://github.com/robotnikz/sunflow-ha/commit/d80a86d7d080088eb4bd972f79e28a0bff92f96f))
+
 ## [1.0.2](https://github.com/robotnikz/sunflow-ha/compare/v1.0.1...v1.0.2) (2026-01-21)
 
 
