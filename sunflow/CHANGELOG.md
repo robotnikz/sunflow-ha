@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/robotnikz/sunflow-ha/compare/v1.0.4...v1.0.5) (2026-01-21)
+
+
+### Bug Fixes
+
+* **ha:** make hassfest/hacs validation pass ([8628aa3](https://github.com/robotnikz/sunflow-ha/commit/8628aa3e9480c1f8906d229dddb0f885f2bd6dcc))
+
 ## [1.0.4](https://github.com/robotnikz/sunflow-ha/compare/v1.0.3...v1.0.4) (2026-01-21)
 
 
