@@ -57,8 +57,24 @@ const currencySymbolFor = (currency: string | undefined) => {
 
 const clampNumber = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
+const normalizeApplianceWatts = (app: Appliance): Appliance => {
+    const watts = Number(app?.watts || 0);
+    if (Number.isFinite(watts) && watts > 0) return { ...app, watts };
+
+    const kwh = Number(app?.kwhEstimate || 0);
+    if (!Number.isFinite(kwh) || kwh <= 0) return { ...app, watts: 0 };
+
+    const minutesRaw = app?.durationMinutes ?? 60;
+    const minutes = Number(minutesRaw);
+    const safeMinutes = Number.isFinite(minutes) && minutes > 0 ? minutes : 60;
+    const hours = safeMinutes / 60;
+
+    const derivedWatts = Math.round((kwh * 1000) / Math.max(0.01, hours));
+    return { ...app, watts: Math.max(0, derivedWatts) };
+};
+
 const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({ power, soc, forecast, solcastRateLimited, todayProduction, isDay, sunriseIso, sunsetIso, batteryCapacity, appliances, hasSolcastKey, reserveSocPct, currency, gridCostPerKwh }) => {
-    const deviceList = (appliances || []).filter(app => Number(app?.watts || 0) > 0);
+    const deviceList = (appliances || []).map(normalizeApplianceWatts).filter(app => Number(app?.watts || 0) > 0);
     const currencySymbol = currencySymbolFor(currency);
 
     const socPct = clampNumber(Number(soc || 0), 0, 100);

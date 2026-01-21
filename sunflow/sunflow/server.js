@@ -470,8 +470,9 @@ const getConfig = () => {
             console.error("Error parsing config.json:", e.message);
         }
     }
-    // Ensure default appliances exist if not present
-    if (!config.appliances || config.appliances.length === 0) {
+    // Ensure default appliances exist if not present.
+    // IMPORTANT: An empty array is a valid user choice ("no appliances").
+    if (config.appliances === undefined || config.appliances === null || !Array.isArray(config.appliances)) {
         config.appliances = DEFAULT_APPLIANCES;
     }
 

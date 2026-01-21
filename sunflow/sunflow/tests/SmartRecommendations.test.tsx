@@ -20,6 +20,11 @@ describe('SmartRecommendations Logic', () => {
     { id: 'phone', name: 'Phone Charger', watts: 15, kwhEstimate: 0.02, iconName: 'smartphone', color: 'text-gray-400' }
   ];
 
+  const mockKwhOnlyAppliances: Appliance[] = [
+    // Simulates an appliance saved in "kWh per run" mode (watts omitted/0)
+    { id: 'washer_kwh', name: 'Washer (kWh only)', watts: 0, kwhEstimate: 1.0, durationMinutes: 60, iconName: 'shirt', color: 'text-blue-400', inputMode: 'kwh_per_run' }
+  ];
+
   // Base props helper
   const defaultProps = {
     forecast: null,
@@ -53,6 +58,19 @@ describe('SmartRecommendations Logic', () => {
     expect(screen.getByText(/Smart Usage/i)).toBeInTheDocument();
     // Washing machine (2000W) fits into 2500W export
     expect(screen.getByText('Washing Machine')).toBeInTheDocument();
+  });
+
+  it('recommends a kWh-per-run appliance by deriving watts from duration', () => {
+    render(
+      <SmartRecommendations
+        {...defaultProps}
+        appliances={mockKwhOnlyAppliances}
+        power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }} // 2500W export
+        soc={90}
+      />
+    );
+
+    expect(screen.getByText('Washer (kWh only)')).toBeInTheDocument();
   });
 
   it('blocks recommendation in "Battery Priority" mode (low SoC, no forecast)', () => {

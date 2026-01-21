@@ -117,6 +117,21 @@ describe('Backend API (integration)', () => {
     expect(getRes.body.inverterIp).toBe('192.168.1.50');
   });
 
+  it('POST /api/config preserves an explicitly empty appliances list', async () => {
+    const postRes = await request(app)
+      .post('/api/config')
+      .send({ appliances: [] })
+      .set('Content-Type', 'application/json');
+
+    expect(postRes.status).toBe(200);
+    expect(postRes.body).toEqual({ success: true });
+
+    const getRes = await request(app).get('/api/config');
+    expect(getRes.status).toBe(200);
+    expect(Array.isArray(getRes.body.appliances)).toBe(true);
+    expect(getRes.body.appliances.length).toBe(0);
+  });
+
   it('POST /api/config rejects invalid inverterIp', async () => {
     const res = await request(app)
       .post('/api/config')

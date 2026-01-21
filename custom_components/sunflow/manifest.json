@@ -4,6 +4,7 @@
   "version": "0.1.11",
   "documentation": "https://github.com/robotnikz/sunflow-ha",
   "issue_tracker": "https://github.com/robotnikz/sunflow-ha/issues",
+  "integration_type": "hub",
   "dependencies": [],
   "codeowners": ["@robotnikz"],
   "config_flow": true,
