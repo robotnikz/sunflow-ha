@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+- Fix settings save error handling when Home Assistant/proxy returns non-JSON responses (avoid `JSON.parse` popup; show useful status/message).
+
 ## 0.1.4
 
 - Fix saving inverter address when users paste a full URL/path (now extracts `private-ip[:port]` safely).

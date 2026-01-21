@@ -55,6 +55,53 @@ const apiFetch = (path: string, init?: RequestInit): Promise<Response> => {
   });
 };
 
+const extractErrorMessage = async (res: Response): Promise<string | null> => {
+  // Prefer JSON { error: string } if available.
+  // Some unit tests/mocks only implement json() and not text().
+  try {
+    const maybeJson = (res as any).json;
+    if (typeof maybeJson === 'function') {
+      const j = await maybeJson.call(res);
+      if (j && typeof j === 'object' && 'error' in j) {
+        const errVal = (j as any).error;
+        if (typeof errVal === 'string' && errVal.trim()) return errVal;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  let text = '';
+  try {
+    const maybeText = (res as any).text;
+    if (typeof maybeText !== 'function') return null;
+    text = await maybeText.call(res);
+  } catch {
+    return null;
+  }
+
+  const trimmed = String(text).trim();
+  if (!trimmed) return null;
+
+  // If it looks like JSON, try extracting error from it.
+  const contentType = ((res.headers?.get?.('content-type') as string) || '').toLowerCase();
+  const looksJson = contentType.includes('application/json') || trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (looksJson) {
+    try {
+      const j = JSON.parse(trimmed);
+      if (j && typeof j === 'object' && 'error' in j) {
+        const errVal = (j as any).error;
+        if (typeof errVal === 'string' && errVal.trim()) return errVal;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Fall back to a short snippet of text/HTML.
+  return trimmed.length > 200 ? trimmed.slice(0, 200) + '…' : trimmed;
+};
+
 export const getRealtimeData = async (): Promise<InverterData> => {
   const res = await apiFetch('api/data');
   if (!res.ok) throw new Error("API call failed");
@@ -103,12 +150,8 @@ export const saveConfig = async (config: SystemConfig): Promise<void> => {
     body: JSON.stringify(config)
   });
   if (!res.ok) {
-    try {
-      const j = await res.json();
-      if (j?.error) throw new Error(String(j.error));
-    } catch (e) {
-      if (e instanceof Error) throw e;
-    }
+    const msg = await extractErrorMessage(res);
+    if (msg) throw new Error(msg);
     throw new Error(`Failed to save settings (HTTP ${res.status})`);
   }
 };
