@@ -52,11 +52,11 @@ On supervised installations (HAOS / HA Supervised), the integration can auto-con
 
 ## Layout
 
-
-## Logo/Icon in Home Assistant & HACS
-
-Home Assistant and HACS load integration branding from the official brands repository.
-If you don’t see a Sunflow icon/logo yet, see [docs/BRANDING.md](docs/BRANDING.md).
+- `repository.yaml` — Home Assistant Add-on repository metadata
+- `sunflow/` — Home Assistant add-on (Supervisor)
+- `sunflow/sunflow/` — Sunflow app source (Vite frontend + Node backend)
+- `custom_components/sunflow/` — Home Assistant integration (HACS)
+- `docs/` — test plan and notes
 
 ## Development / CI
 

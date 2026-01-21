@@ -5,6 +5,14 @@ The bundled upstream Sunflow app has its own release/versioning.
 
 Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
+## 1.0.0
+
+- Stable baseline release of the Home Assistant add-on + optional integration.
+- Integration: polling interval is configurable via Options and updates now reliably follow that interval.
+- Integration: battery sensors (signed battery power + charge/discharge split), plus PV/load/grid and SoC.
+- Add-on/UI: Ingress save reliability improvements and supervised add-on auto-connect improvements.
+- App: Smart Usage appliances persist correctly (empty list is respected; kWh-per-run devices are supported).
+
 ## 0.1.11
 
 - Integration: default polling interval is now 10s for better automations/notifications (configurable via Options).
