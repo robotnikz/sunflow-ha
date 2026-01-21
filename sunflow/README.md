@@ -3,6 +3,13 @@
 Sunflow is a self-hosted solar energy dashboard that runs entirely inside Home Assistant as an add-on.
 It provides an Ingress UI (opens in the Home Assistant sidebar) and a local REST API for data access.
 
+Upstream Sunflow (main app):
+
+- https://github.com/robotnikz/Sunflow
+
+This add-on bundles the full Sunflow app (frontend + backend) and runs as a **standalone** service inside Home Assistant.
+The Home Assistant integration in this repository is optional.
+
 ## Features
 
 - Ingress UI (no port exposure required)

@@ -2,6 +2,12 @@
 
 This add-on runs Sunflow fully inside Home Assistant and exposes the UI via **Ingress** (no port forwarding required).
 
+Upstream Sunflow (main app):
+
+- https://github.com/robotnikz/Sunflow
+
+This add-on bundles the full app (frontend + backend) and runs standalone inside Home Assistant.
+
 ## Installation (one-click style)
 
 1. Home Assistant → **Settings** → **Add-ons** → **Add-on Store**.
@@ -22,6 +28,8 @@ Sunflow stores its database and uploads in the add-on `/data` directory, which i
 ## Integration (optional)
 
 If you also install the Sunflow integration (HACS/custom component), it can auto-connect to the locally installed add-on on supervised installations.
+
+Note: adding a custom integration repository is done in **HACS** (not in Home Assistant's Integrations UI).
 
 ## Development checks
 

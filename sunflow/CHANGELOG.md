@@ -1,17 +1,22 @@
 # Changelog
 
-## 0.1.5
+This changelog tracks the Home Assistant add-on wrapper version.
+The bundled upstream Sunflow app has its own release/versioning.
 
-- Fix settings save error handling when Home Assistant/proxy returns non-JSON responses (avoid `JSON.parse` popup; show useful status/message).
-
-## 0.1.4
-
-- Fix saving inverter address when users paste a full URL/path (now extracts `private-ip[:port]` safely).
+Upstream Sunflow: https://github.com/robotnikz/Sunflow
 
 ## 0.1.6
 
 - Fix settings save failing with HTTP 404 under Home Assistant Ingress by deriving the correct ingress base path for API calls.
-- Show the backend error message in the UI when settings save fails (helps diagnose invalid input or auth).
+
+## 0.1.5
+
+- Fix settings save error handling when Home Assistant/proxy returns non-JSON responses (avoid `JSON.parse` popup; show useful status/message).
+	- Also shows the backend error message in the UI when settings save fails (helps diagnose invalid input or auth).
+
+## 0.1.4
+
+- Fix saving inverter address when users paste a full URL/path (now extracts `private-ip[:port]` safely).
 
 ## 0.1.3
 

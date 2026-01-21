@@ -2,6 +2,15 @@
 
 This repository provides Sunflow as a **Home Assistant Add-on** (Ingress UI) and an optional **Home Assistant Integration** (sensors + config flow).
 
+## Upstream project
+
+The "main app" is **Sunflow**:
+
+- https://github.com/robotnikz/Sunflow
+
+This Home Assistant repository packages that app as a **complete, standalone add-on** (frontend + backend) that runs independently inside Home Assistant.
+The Home Assistant integration is **optional** and only needed if you want entities/sensors in Home Assistant.
+
 Versioning note: the Home Assistant add-on and integration use independent versions (this repo release), and the bundled Sunflow app has its own upstream version.
 
 ## Install (Add-on)
@@ -20,12 +29,20 @@ For an end-to-end checklist on real HAOS / Supervised, see: [docs/HAOS_TESTPLAN.
 
 This is recommended if you want entities/sensors inside Home Assistant.
 
+Note: the **Home Assistant Integrations** screen does not have "custom repositories". That feature is part of **HACS**.
+
 1. Install HACS.
 2. HACS → **Integrations** → menu → **Custom repositories**.
 3. Add `https://github.com/robotnikz/sunflow-ha` as type **Integration**.
 4. Install **Sunflow**.
 5. Restart Home Assistant.
 6. Settings → **Devices & services** → **Add integration** → **Sunflow**.
+
+If you don't use HACS, you can install manually:
+
+1. Copy `custom_components/sunflow/` into your Home Assistant config folder at `config/custom_components/sunflow/`.
+2. Restart Home Assistant.
+3. Settings → **Devices & services** → **Add integration** → **Sunflow**.
 
 On supervised installations (HAOS / HA Supervised), the integration can auto-connect to the locally installed Sunflow add-on via the Supervisor network (no host port exposure required).
 
