@@ -1,8 +1,16 @@
 # Sunflow for Home Assistant (Addon + Integration)
 
-This repository is a Home Assistant packaging workspace for Sunflow.
+This repository provides Sunflow as a **Home Assistant Add-on** (Ingress UI) and an optional **Integration**.
 
-It is also a valid Home Assistant **Add-on repository**: users can add this GitHub URL in the Add-on Store → Repositories and then install the Sunflow add-on.
+## Install (Add-on)
+
+1. Home Assistant → **Settings** → **Add-ons** → **Add-on Store**.
+2. Menu (top right) → **Repositories**.
+3. Add: `https://github.com/robotnikz/sunflow-ha`
+4. Install **Sunflow**.
+5. Optional: set `admin_token` in the add-on configuration.
+6. Start the add-on.
+7. Open the UI via the **Sunflow** sidebar entry (Ingress).
 
 ## Layout
 
@@ -23,6 +31,6 @@ On supervised Home Assistant installations (HA OS / HA Supervised), the integrat
 
 ## Development
 
-This repo is intended to be used as a packaging/workbench. The `sunflow/` folder is currently a copy of the upstream project.
+This repo is intended to be used as a packaging/workbench.
 
 Repo (packaging): https://github.com/robotnikz/sunflow-ha

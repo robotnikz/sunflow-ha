@@ -1,5 +1,12 @@
 ARG BUILD_FROM
+ARG BUILD_VERSION
+ARG BUILD_ARCH
 FROM ${BUILD_FROM}
+
+LABEL \
+  io.hass.version=${BUILD_VERSION} \
+  io.hass.type="addon" \
+  io.hass.arch=${BUILD_ARCH}
 
 # Home Assistant add-on base images are Alpine-based.
 # We use nodejs + npm from apk and build the frontend in-image for MVP.

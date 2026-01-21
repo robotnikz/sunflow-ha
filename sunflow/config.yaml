@@ -15,6 +15,10 @@ ingress: true
 ingress_port: 3000
 ingress_entry: /
 panel_icon: mdi:solar-power
+panel_title: Sunflow
+
+# Used in some UI contexts; with ingress enabled, users typically open via the sidebar.
+webui: "http://[HOST]:[PORT:3000]/"
 
 # If you want to optionally expose a host port, you can add it later.
 # For MVP, keep it internal/ingress-only.
