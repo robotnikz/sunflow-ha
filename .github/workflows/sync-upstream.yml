@@ -1,0 +1,105 @@
+name: Sync Upstream (robotnikz/Sunflow)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # daily at 03:22 UTC
+    - cron: '22 3 * * *'
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine latest upstream release
+        id: upstream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view -R robotnikz/Sunflow --json tagName -q .tagName)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Compare to current tracked upstream
+        id: compare
+        run: |
+          set -euo pipefail
+          current=""
+          if [ -f sunflow/upstream_version.txt ]; then
+            current=$(cat sunflow/upstream_version.txt | tr -d '\r\n')
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+
+          if [ "$current" = "${{ steps.upstream.outputs.tag }}" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "Up to date ($current)"
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            echo "Needs update: $current -> ${{ steps.upstream.outputs.tag }}"
+          fi
+
+      - name: Stop if up to date
+        if: ${{ steps.compare.outputs.up_to_date == 'true' }}
+        run: echo "No upstream changes."
+
+      - name: Sync upstream into sunflow/sunflow
+        if: ${{ steps.compare.outputs.up_to_date != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/sync_upstream.sh
+          scripts/sync_upstream.sh "${{ steps.upstream.outputs.tag }}"
+          echo "${{ steps.upstream.outputs.tag }}" > sunflow/upstream_version.txt
+
+      - name: Create PR
+        if: ${{ steps.compare.outputs.up_to_date != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.upstream.outputs.tag }}"
+          clean="${tag#v}"
+          branch="chore/upstream-${clean}"
+
+          # Avoid spamming: if branch/PR already exists, stop.
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "Remote branch already exists: $branch"
+            exit 0
+          fi
+          existing_pr=$(gh pr list --head "$branch" --state open --json number -q '.[0].number' || true)
+          if [ -n "${existing_pr:-}" ]; then
+            echo "Open PR already exists for $branch (#$existing_pr)"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$branch"
+          git add sunflow/sunflow sunflow/upstream_version.txt sunflow/upstream_repo.txt || true
+
+          if git diff --cached --quiet; then
+            echo "No changes after sync; skipping PR."
+            exit 0
+          fi
+
+          git commit -m "chore(upstream): sync robotnikz/Sunflow ${tag}"
+          git push --set-upstream origin "$branch"
+
+          gh pr create \
+            --title "chore(upstream): sync robotnikz/Sunflow ${tag}" \
+            --body "Automated sync from https://github.com/robotnikz/Sunflow/releases/tag/${tag}\n\n- Previous: ${{ steps.compare.outputs.current }}\n- New: ${tag}\n" \
+            --base main \
+            --head "$branch"

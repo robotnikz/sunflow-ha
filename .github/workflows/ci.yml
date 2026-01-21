@@ -2,14 +2,30 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: [ main ]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  patch-layer-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Guard vendored upstream edits
+        run: bash scripts/check_patch_layer.sh "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+
+  sync-reproducible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify upstream + patches reproduces vendored tree
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/verify_synced_tree.sh
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

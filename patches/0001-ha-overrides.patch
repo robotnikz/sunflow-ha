@@ -1,0 +1,2739 @@
+﻿diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/dependabot.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/dependabot.yml"
+deleted file mode 100644
+index 411b139..0000000
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/dependabot.yml"
++++ /dev/null
+@@ -1,22 +0,0 @@
+-version: 2
+-updates:
+-  # JavaScript/TypeScript dependencies
+-  - package-ecosystem: "npm"
+-    directory: "/"
+-    schedule:
+-      interval: "weekly"
+-    open-pull-requests-limit: 10
+-
+-  # GitHub Actions (workflows)
+-  - package-ecosystem: "github-actions"
+-    directory: "/"
+-    schedule:
+-      interval: "weekly"
+-    open-pull-requests-limit: 10
+-
+-  # Docker base images (Dockerfile)
+-  - package-ecosystem: "docker"
+-    directory: "/"
+-    schedule:
+-      interval: "weekly"
+-    open-pull-requests-limit: 5
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/codeql.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/codeql.yml"
+deleted file mode 100644
+index 88fc60c..0000000
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/codeql.yml"
++++ /dev/null
+@@ -1,51 +0,0 @@
+-name: CodeQL
+-
+-on:
+-  push:
+-    branches: ["main", "dev"]
+-  pull_request:
+-    branches: ["main", "dev"]
+-  schedule:
+-    - cron: "27 3 * * 0" # weekly
+-
+-permissions:
+-  contents: read
+-
+-jobs:
+-  analyze:
+-    name: Analyze
+-    runs-on: ubuntu-latest
+-    permissions:
+-      contents: read
+-      security-events: write
+-      actions: read
+-
+-    strategy:
+-      fail-fast: false
+-      matrix:
+-        language: ["javascript-typescript"]
+-
+-    steps:
+-      - name: Checkout repository
+-        uses: actions/checkout@v6
+-
+-      - name: Initialize CodeQL
+-        uses: github/codeql-action/init@v4
+-        with:
+-          languages: ${{ matrix.language }}
+-
+-      - name: Setup Node.js
+-        uses: actions/setup-node@v6
+-        with:
+-          node-version: "22"
+-          cache: "npm"
+-
+-      - name: Install dependencies
+-        run: npm ci
+-
+-      # Optional but helpful for TS-heavy repos
+-      - name: Build
+-        run: npm run build
+-
+-      - name: Perform CodeQL Analysis
+-        uses: github/codeql-action/analyze@v4
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/docker-publish.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/docker-publish.yml"
+deleted file mode 100644
+index 67f577e..0000000
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/docker-publish.yml"
++++ /dev/null
+@@ -1,142 +0,0 @@
+-name: CI/CD Pipeline
+-
+-on:
+-  push:
+-    branches: [ "main", "dev" ]
+-  pull_request:
+-    branches: [ "main", "dev" ]
+-
+-concurrency:
+-  group: ${{ github.workflow }}-${{ github.ref }}
+-  cancel-in-progress: true
+-
+-permissions:
+-  contents: read
+-
+-env:
+-  REGISTRY: ghcr.io
+-  IMAGE_NAME: ${{ github.repository }}
+-
+-jobs:
+-  # JOB 1: QUALITY ASSURANCE
+-  # Runs Typechecks and Unit Tests
+-  test:
+-    name: Run Tests & Typecheck
+-    runs-on: ubuntu-latest
+-    steps:
+-      - name: Checkout code
+-        uses: actions/checkout@v6
+-
+-      - name: Setup Node.js
+-        uses: actions/setup-node@v6
+-        with:
+-          node-version: '22'
+-          cache: 'npm'
+-
+-      - name: Install Dependencies
+-        run: npm ci
+-
+-      - name: Type Check (TypeScript)
+-        run: npm run typecheck
+-
+-      - name: Run Unit Tests
+-        run: npm run test:run
+-
+-      - name: Build (Vite)
+-        run: npm run build
+-
+-  # JOB 2: Semantic Release
+-  # Only runs if tests pass AND we are on main branch (not PRs)
+-  release:
+-    name: Semantic Release
+-    needs: test # WAITS FOR TESTS TO PASS
+-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+-    runs-on: ubuntu-latest
+-    permissions:
+-      contents: write
+-      issues: write
+-      pull-requests: write
+-    outputs:
+-      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+-      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+-    steps:
+-      - name: Checkout
+-        uses: actions/checkout@v6
+-        with:
+-          fetch-depth: 0
+-          persist-credentials: false
+-
+-      - name: Setup Node.js
+-        uses: actions/setup-node@v6
+-        with:
+-          node-version: "22"
+-          cache: 'npm'
+-
+-      - name: Install dependencies
+-        run: npm ci
+-
+-      - name: Semantic Release
+-        id: semantic
+-        uses: cycjimmy/semantic-release-action@v6
+-        env:
+-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+-        with:
+-          semantic_version: 22
+-          extra_plugins: |
+-            @semantic-release/changelog
+-            @semantic-release/git
+-            @semantic-release/npm
+-
+-  # JOB 3: Docker Build
+-  # Only runs if a new release was published
+-  build-and-push:
+-    name: Build & Push Docker
+-    needs: release # WAITS FOR RELEASE TO FINISH
+-    if: needs.release.outputs.new_release_published == 'true'
+-    runs-on: ubuntu-latest
+-    permissions:
+-      contents: read
+-      packages: write
+-      id-token: write
+-
+-    steps:
+-      - name: Checkout repository
+-        uses: actions/checkout@v6
+-        with:
+-          ref: ${{ format('refs/tags/v{0}', needs.release.outputs.new_release_version) }}
+-
+-      - name: Lowercase Image Name
+-        run: |
+-          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+-
+-      - name: Set up QEMU
+-        uses: docker/setup-qemu-action@v3
+-
+-      - name: Set up Docker Buildx
+-        uses: docker/setup-buildx-action@v3
+-
+-      - name: Log into registry ${{ env.REGISTRY }}
+-        uses: docker/login-action@v3
+-        with:
+-          registry: ${{ env.REGISTRY }}
+-          username: ${{ github.actor }}
+-          password: ${{ secrets.GITHUB_TOKEN }}
+-
+-      - name: Extract Docker metadata
+-        id: meta
+-        uses: docker/metadata-action@v5
+-        with:
+-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+-          tags: |
+-            type=semver,pattern={{version}},value=${{ needs.release.outputs.new_release_version }}
+-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.new_release_version }}
+-            type=raw,value=latest
+-
+-      - name: Build and push Docker image
+-        uses: docker/build-push-action@v6
+-        with:
+-          context: .
+-          platforms: linux/amd64,linux/arm64
+-          push: true
+-          tags: ${{ steps.meta.outputs.tags }}
+-          labels: ${{ steps.meta.outputs.labels }}
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/retag-latest.yml" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/retag-latest.yml"
+deleted file mode 100644
+index 72249f9..0000000
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/.github/workflows/retag-latest.yml"
++++ /dev/null
+@@ -1,70 +0,0 @@
+-name: Retag GHCR latest
+-
+-on:
+-  workflow_dispatch:
+-    inputs:
+-      source_tag:
+-        description: "Existing image tag to set as :latest (e.g. 1.10.1)"
+-        required: true
+-        default: "1.10.1"
+-  push:
+-    branches: ["main"]
+-    paths:
+-      - "package.json"
+-
+-concurrency:
+-  group: retag-latest
+-  cancel-in-progress: false
+-
+-permissions:
+-  contents: read
+-  packages: write
+-
+-env:
+-  REGISTRY: ghcr.io
+-  IMAGE_NAME: ${{ github.repository }}
+-
+-jobs:
+-  retag:
+-    name: Retag latest
+-    runs-on: ubuntu-latest
+-
+-    steps:
+-      - name: Checkout repository
+-        uses: actions/checkout@v6
+-
+-      - name: Lowercase image name
+-        run: |
+-          echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >>"$GITHUB_ENV"
+-
+-      - name: Determine source tag
+-        run: |
+-          SOURCE_TAG="${{ inputs.source_tag }}"
+-          if [ -z "$SOURCE_TAG" ]; then
+-            SOURCE_TAG="$(node -p "require('./package.json').version")"
+-          fi
+-          echo "SOURCE_TAG=$SOURCE_TAG" >>"$GITHUB_ENV"
+-
+-      - name: Set source image ref
+-        run: |
+-          echo "SOURCE_IMAGE=${REGISTRY}/${IMAGE_NAME}:${SOURCE_TAG}" >>"$GITHUB_ENV"
+-          echo "TARGET_IMAGE=${REGISTRY}/${IMAGE_NAME}:latest" >>"$GITHUB_ENV"
+-
+-      - name: Set up Docker Buildx
+-        uses: docker/setup-buildx-action@v3
+-
+-      - name: Log into registry
+-        uses: docker/login-action@v3
+-        with:
+-          registry: ${{ env.REGISTRY }}
+-          username: ${{ github.actor }}
+-          password: ${{ secrets.GITHUB_TOKEN }}
+-
+-      - name: Verify source tag exists
+-        run: docker buildx imagetools inspect "$SOURCE_IMAGE"
+-
+-      - name: Retag source as latest (no rebuild)
+-        run: docker buildx imagetools create -t "$TARGET_IMAGE" "$SOURCE_IMAGE"
+-
+-      - name: Verify latest
+-        run: docker buildx imagetools inspect "$TARGET_IMAGE"
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/App.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/App.tsx"
+index b8e4039..b23d460 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/App.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/App.tsx"
+@@ -87,7 +87,8 @@ const App: React.FC = () => {
+       setRefreshTrigger(prev => prev + 1);
+     } catch (e) {
+       console.error(e);
+-      alert("Failed to save settings");
++      const msg = e instanceof Error ? e.message : 'Failed to save settings';
++      alert(msg);
+     }
+   };
+ 
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CONTRIBUTING.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/CONTRIBUTING.md"
+index b20cbc5..e1c6421 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CONTRIBUTING.md"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/CONTRIBUTING.md"
+@@ -18,11 +18,11 @@ These instructions are for developers. If you just want to run SunFlow, follow t
+ - Unit/Integration: Vitest
+ 
+ Related docs:
+-- Test strategy & scenarios: [TESTPLAN.md](TESTPLAN.md)
+-- Quick manual UI checklist: [UX_CHECKLIST.md](UX_CHECKLIST.md)
+-- Day-2 operations: [OPERATIONS.md](OPERATIONS.md)
+-- Self-hosting hardening: [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md)
+-- Security/architecture notes: [AUDIT.md](AUDIT.md)
++- Test strategy & scenarios: [docs/TESTPLAN.md](docs/TESTPLAN.md)
++- Quick manual UI checklist: [docs/UX_CHECKLIST.md](docs/UX_CHECKLIST.md)
++- Day-2 operations: [docs/OPERATIONS.md](docs/OPERATIONS.md)
++- Self-hosting hardening: [SECURITY.md](SECURITY.md)
++- Security/architecture notes: [docs/AUDIT.md](docs/AUDIT.md)
+ 
+ ## Install & run (local dev)
+ 
+@@ -50,7 +50,7 @@ This repo uses:
+ - Unit/Integration tests: Vitest
+ - E2E tests: Playwright
+ 
+-For the overall regression strategy and scenarios, see [TESTPLAN.md](TESTPLAN.md). For a quick manual UI checklist, see [UX_CHECKLIST.md](UX_CHECKLIST.md).
++For the overall regression strategy and scenarios, see [docs/TESTPLAN.md](docs/TESTPLAN.md). For a quick manual UI checklist, see [docs/UX_CHECKLIST.md](docs/UX_CHECKLIST.md).
+ 
+ ### Unit/Integration (Vitest)
+ 
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/README.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/README.md"
+index d1728aa..48967d0 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/README.md"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/README.md"
+@@ -132,7 +132,7 @@ docker compose up -d
+ > **Upgrade safety (data/history):** keep your `./sunflow-data` directory when updating. If you delete or change this mount, SunFlow will start with an empty database.
+ 
+ > [!TIP]
+-> For upgrades, backups, rollback and troubleshooting, see [OPERATIONS.md](OPERATIONS.md).
++> For upgrades, backups, rollback and troubleshooting, see [docs/OPERATIONS.md](docs/OPERATIONS.md).
+ 
+ ### Method 2: Docker CLI
+ 
+@@ -159,7 +159,7 @@ Once running, access the dashboard at `http://localhost:3000`.
+ 5.  **Tariffs & Expenses:** Add your grid costs and installation expenses to activate the ROI widget.
+ 6.  **Appliances:** Configure your heavy consumers (Watts & Duration).
+ 
+-For day-2 ops (backup/restore, upgrades, common issues), see [OPERATIONS.md](OPERATIONS.md).
++For day-2 ops (backup/restore, upgrades, common issues), see [docs/OPERATIONS.md](docs/OPERATIONS.md).
+ 
+ ---
+ 
+@@ -171,11 +171,11 @@ SunFlow is intended for self-hosting on a trusted network. If you expose it beyo
+ - **CORS allowlist (recommended):** set `CORS_ORIGIN` to a comma-separated list of allowed browser origins (prod defaults to no cross-origin).
+ - **Reverse proxy setups:** set `TRUST_PROXY=1` so rate limiting and IP logic work correctly.
+ 
+-For details and additional recommendations see [AUDIT.md](AUDIT.md).
++For details and additional recommendations see [docs/AUDIT.md](docs/AUDIT.md).
+ 
+-Practical checklist for self-hosting: [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md).
++Practical checklist for self-hosting: [SECURITY.md](SECURITY.md).
+ 
+-Operations runbook (backup/restore, upgrades, troubleshooting): [OPERATIONS.md](OPERATIONS.md).
++Operations runbook (backup/restore, upgrades, troubleshooting): [docs/OPERATIONS.md](docs/OPERATIONS.md).
+ 
+ ---
+ 
+@@ -183,8 +183,8 @@ Operations runbook (backup/restore, upgrades, troubleshooting): [OPERATIONS.md](
+ 
+ See [CONTRIBUTING.md](CONTRIBUTING.md) for developer setup, testing, and PR guidelines.
+ 
+-- Test strategy & scenarios: [TESTPLAN.md](TESTPLAN.md)
+-- Quick manual UI regression checklist: [UX_CHECKLIST.md](UX_CHECKLIST.md)
++- Test strategy & scenarios: [docs/TESTPLAN.md](docs/TESTPLAN.md)
++- Quick manual UI regression checklist: [docs/UX_CHECKLIST.md](docs/UX_CHECKLIST.md)
+ 
+ ---
+ 
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/SECURITY_CHECKLIST.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/SECURITY.md"
+similarity index 93%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/SECURITY_CHECKLIST.md"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/SECURITY.md"
+index 353d994..2c815c1 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/SECURITY_CHECKLIST.md"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/SECURITY.md"
+@@ -61,11 +61,11 @@ Notes:
+ 
+ - Pin production to a version tag (or digest), not only `:latest`.
+ - Keep the last known-good tag available for rollback.
+-- Practice rollback once (see [OPERATIONS.md](OPERATIONS.md)).
++- Practice rollback once (see [docs/OPERATIONS.md](docs/OPERATIONS.md)).
+ 
+ ## 6) Backups
+ 
+ - Back up the whole data directory (config + DB + uploads).
+ - Perform a restore drill at least once.
+ 
+-See [OPERATIONS.md](OPERATIONS.md) for backup/restore commands.
++See [docs/OPERATIONS.md](docs/OPERATIONS.md) for backup/restore commands.
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SettingsModal.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SettingsModal.tsx"
+index 0d2fa70..c6e54a7 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SettingsModal.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SettingsModal.tsx"
+@@ -2,7 +2,7 @@
+ import React, { useState, useEffect } from 'react';
+ import { SystemConfig, Tariff, Expense, Appliance } from '../types';
+ import { X, Save, Plus, Trash2, Calendar, DollarSign, Euro, PoundSterling, MapPin, Zap, History, HelpCircle, Calculator, CheckCircle2, AlertTriangle, ArrowRight, TrendingUp, SunMedium, Battery, Edit, Link2, Send, Sliders, Plug, Activity, Scale, Check, Bell, Upload } from 'lucide-react';
+-import { getTariffs, addTariff, deleteTariff, getExpenses, addExpense, deleteExpense, getConfig } from '../services/api';
++import { getTariffs, addTariff, deleteTariff, getExpenses, addExpense, deleteExpense, getConfig, getAdminToken, setAdminToken, testNotification } from '../services/api';
+ import { ICON_MAP } from './SmartRecommendations';
+ import CsvImporter from './CsvImporter';
+ 
+@@ -59,6 +59,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
+       return config;
+   });
+ 
++    const [adminTokenDraft, setAdminTokenDraft] = useState<string>(() => getAdminToken() ?? '');
++
+   const [tariffs, setTariffs] = useState<Tariff[]>([]);
+   const [expenses, setExpenses] = useState<Expense[]>([]);
+   
+@@ -208,6 +210,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
+ 
+   const handleConfigSubmit = (e: React.FormEvent) => {
+     e.preventDefault();
++        setAdminToken(adminTokenDraft);
+     // Ensure numbers are numbers before saving
+     const cleanedConfig = {
+         ...formData,
+@@ -239,13 +242,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
+       }
+       
+       try {
+-          const res = await fetch('/api/test-notification', {
+-              method: 'POST',
+-              headers: { 'Content-Type': 'application/json' },
+-              body: JSON.stringify({})
+-          });
+-          if(res.ok) alert("Test notification sent! Check your Discord channel.");
+-          else throw new Error("Failed");
++          await testNotification();
++          alert("Test notification sent! Check your Discord channel.");
+       } catch(e) {
+           alert("Failed to send test notification. Check the URL and server logs.");
+       }
+@@ -484,8 +482,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
+               <div className="space-y-4">
+                   <h3 className="text-slate-300 font-bold border-b border-slate-700 pb-2">Connection & Date</h3>
+                   <div>
+-                    <label className="block text-sm font-medium text-slate-400 mb-2">Inverter IP Address</label>
+-                    <input type="text" value={formData.inverterIp} onChange={(e) => setFormData({...formData, inverterIp: e.target.value})} placeholder="e.g. 192.168.1.50" className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500" required />
++                                        <label className="block text-sm font-medium text-slate-400 mb-2">Inverter Address</label>
++                                        <input type="text" value={formData.inverterIp} onChange={(e) => setFormData({...formData, inverterIp: e.target.value})} placeholder="e.g. 192.168.1.50 or http://192.168.1.50" className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500" required />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-slate-400 mb-2">System Commissioning Date</label>
+@@ -500,6 +498,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentConfig, onSave, on
+                         <option value="GBP">GBP (┬ú)</option>
+                     </select>
+                   </div>
++                                    <div>
++                                        <label className="block text-sm font-medium text-slate-400 mb-2">Admin Token (optional)</label>
++                                        <input
++                                            type="password"
++                                            value={adminTokenDraft}
++                                            onChange={(e) => setAdminTokenDraft(e.target.value)}
++                                            placeholder="Only needed if the add-on admin_token option is set"
++                                            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-yellow-500"
++                                        />
++                                        <p className="text-xs text-slate-500 mt-1">Stored locally in your browser and sent as a Bearer token for protected actions (saving settings, tariffs, expenses, test notification).</p>
++                                    </div>
+               </div>
+               <div className="space-y-4 pt-4">
+                  <h3 className="text-slate-300 font-bold border-b border-slate-700 pb-2 flex items-center gap-2"><MapPin size={18}/> Location & Capacity</h3>
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SmartRecommendations.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SmartRecommendations.tsx"
+index 4384457..5b1e654 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/components/SmartRecommendations.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/components/SmartRecommendations.tsx"
+@@ -57,8 +57,24 @@ const currencySymbolFor = (currency: string | undefined) => {
+ 
+ const clampNumber = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+ 
++const normalizeApplianceWatts = (app: Appliance): Appliance => {
++    const watts = Number(app?.watts || 0);
++    if (Number.isFinite(watts) && watts > 0) return { ...app, watts };
++
++    const kwh = Number(app?.kwhEstimate || 0);
++    if (!Number.isFinite(kwh) || kwh <= 0) return { ...app, watts: 0 };
++
++    const minutesRaw = app?.durationMinutes ?? 60;
++    const minutes = Number(minutesRaw);
++    const safeMinutes = Number.isFinite(minutes) && minutes > 0 ? minutes : 60;
++    const hours = safeMinutes / 60;
++
++    const derivedWatts = Math.round((kwh * 1000) / Math.max(0.01, hours));
++    return { ...app, watts: Math.max(0, derivedWatts) };
++};
++
+ const SmartRecommendations: React.FC<SmartRecommendationsProps> = ({ power, soc, forecast, solcastRateLimited, todayProduction, isDay, sunriseIso, sunsetIso, batteryCapacity, appliances, hasSolcastKey, reserveSocPct, currency, gridCostPerKwh }) => {
+-    const deviceList = (appliances || []).filter(app => Number(app?.watts || 0) > 0);
++    const deviceList = (appliances || []).map(normalizeApplianceWatts).filter(app => Number(app?.watts || 0) > 0);
+     const currencySymbol = currencySymbolFor(currency);
+ 
+     const socPct = clampNumber(Number(soc || 0), 0, 100);
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/Dockerfile" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/Dockerfile"
+similarity index 95%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/Dockerfile"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/Dockerfile"
+index 87e9ac1..d871741 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/Dockerfile"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/Dockerfile"
+@@ -32,7 +32,7 @@ RUN npm ci --omit=dev \
+ # Copy built assets from builder stage
+ COPY --from=builder /app/dist ./dist
+ COPY --from=builder /app/server.js ./
+-COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
++COPY --from=builder /app/docker/entrypoint.sh ./entrypoint.sh
+ 
+ # Create persistent data directory and drop root privileges
+ RUN mkdir -p /app/data \
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/entrypoint.sh" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/entrypoint.sh"
+similarity index 100%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/entrypoint.sh"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docker/entrypoint.sh"
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/AUDIT.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/AUDIT.md"
+similarity index 96%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/AUDIT.md"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/AUDIT.md"
+index ad54478..6c22e6b 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/AUDIT.md"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/AUDIT.md"
+@@ -61,7 +61,7 @@ Because of that, the safest stance is: **do not expose SunFlow to the internet w
+   - upload limits and robust cleanup
+   - fixed a runtime issue in `/api/forecast` outside daylight window
+ 
+-- Container hardening (see `Dockerfile`):
++- Container hardening (see `docker/Dockerfile`):
+   - Node 22 LTS
+   - reproducible installs via lockfile
+   - non-root execution (`USER node`)
+@@ -102,8 +102,8 @@ Notes:
+ - Keep secrets out of config responses when possible; if you set `SUNFLOW_ADMIN_TOKEN`, secrets are redacted for non-admin requests.
+ 
+ See also:
+-- Practical self-hosting checklist: `SECURITY_CHECKLIST.md`
+-- Day-2 operations runbook: `OPERATIONS.md`
++- Practical self-hosting checklist: [SECURITY.md](../SECURITY.md)
++- Day-2 operations runbook: [OPERATIONS.md](OPERATIONS.md)
+ 
+ ## Env var reference (added/used)
+ 
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CHANGELOG.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/CHANGELOG.md"
+similarity index 100%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/CHANGELOG.md"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/CHANGELOG.md"
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/OPERATIONS.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/OPERATIONS.md"
+similarity index 100%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/OPERATIONS.md"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/OPERATIONS.md"
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/TESTPLAN.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/TESTPLAN.md"
+similarity index 95%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/TESTPLAN.md"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/TESTPLAN.md"
+index 3eb372a..cf9f839 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/TESTPLAN.md"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/TESTPLAN.md"
+@@ -63,12 +63,12 @@ Notes:
+ ### b) Stability & reliability
+ - Long-run (24h): polling, retention, restart/resume, DB file growth.
+ 
+-- Soak (lightweight, automatable): run the soak test script (see [CONTRIBUTING.md](CONTRIBUTING.md)).
++- Soak (lightweight, automatable): run the soak test script (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+ 	- Expected: no 5xx, no timeouts, stable status codes.
+ 	- For Docker: start the container via Compose, then run the soak test against the published port.
+ 	- Optional: restart the container during the soak and verify the service recovers cleanly.
+ 
+-For a concrete 24h checklist (restart/resume, outage simulation, what to monitor), see `OPERATIONS.md`.
++For a concrete 24h checklist (restart/resume, outage simulation, what to monitor), see [OPERATIONS.md](OPERATIONS.md).
+ 
+ ### c) Security
+ - AuthN/Z: admin token enforced
+@@ -76,13 +76,13 @@ For a concrete 24h checklist (restart/resume, outage simulation, what to monitor
+ - Secrets: redaction when admin token is enabled
+ - Automated regressions: see `tests/api.security.regression.test.ts` (CORS allowlist + webhook SSRF guard).
+ 
+-Manual self-hosting checklist: `SECURITY_CHECKLIST.md`.
++Manual self-hosting checklist: [SECURITY.md](../SECURITY.md).
+ 
+ ## 6) Usability & UX
+ 
+ - Clear copy, consistent validation, actionable error messages.
+ 
+-Checklist: `UX_CHECKLIST.md`.
++Checklist: [UX_CHECKLIST.md](UX_CHECKLIST.md).
+ 
+ ## 7) Compatibility & environment
+ 
+@@ -112,7 +112,7 @@ Note: E2E can run nightly to reduce CI flakiness impact.
+ 	- Rollback: switch back to the previous tag and restart.
+ 
+ - DB persisted via bind mount (Docker Compose default): `./sunflow-data:/app/data`
+-	- Backup: stop container, then copy the `sunflow-data/` directory (see `OPERATIONS.md`).
++	- Backup: stop container, then copy the `sunflow-data/` directory (see [OPERATIONS.md](OPERATIONS.md)).
+ 	- Monitoring: DB growth, CPU/RAM (especially during long polling/soak)
+ 
+ Manual ops scenarios (short):
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/UX_CHECKLIST.md" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/UX_CHECKLIST.md"
+similarity index 100%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/UX_CHECKLIST.md"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/docs/UX_CHECKLIST.md"
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.html" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.html"
+index e2215d9..5d1052c 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.html"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.html"
+@@ -5,53 +5,10 @@
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <title>SunFlow Monitor</title>
+     <!-- Favicon -->
+-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+-    
+-    <!-- Using Tailwind CDN for simplicity in this setup -->
+-    <script src="https://cdn.tailwindcss.com"></script>
+-    
+-    <!-- Load Inter Font for consistency -->
+-    <link rel="preconnect" href="https://fonts.googleapis.com">
+-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+-
+-    <style>
+-      body {
+-        background-color: #0f172a; /* slate-900 */
+-        color: #e2e8f0; /* slate-200 */
+-        font-family: 'Inter', sans-serif; /* Applied globally */
+-        -webkit-font-smoothing: antialiased;
+-        -moz-osx-font-smoothing: grayscale;
+-        text-rendering: optimizeLegibility;
+-      }
+-      /* Custom Scrollbar */
+-      ::-webkit-scrollbar {
+-        width: 8px;
+-        height: 8px;
+-      }
+-      ::-webkit-scrollbar-track {
+-        background: #1e293b; 
+-      }
+-      ::-webkit-scrollbar-thumb {
+-        background: #475569; 
+-        border-radius: 4px;
+-      }
+-      ::-webkit-scrollbar-thumb:hover {
+-        background: #64748b; 
+-      }
+-      
+-      /* Animations */
+-      @keyframes fade-in {
+-        from { opacity: 0; transform: translateY(10px); }
+-        to { opacity: 1; transform: translateY(0); }
+-      }
+-      .animate-fade-in {
+-        animation: fade-in 0.5s ease-out forwards;
+-      }
+-    </style>
++    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+ </head>
+   <body>
+     <div id="root"></div>
+-    <script type="module" src="/index.tsx"></script>
++    <script type="module" src="./index.tsx"></script>
+   </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.tsx"
+index 6ca5361..2b59bbe 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/index.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/index.tsx"
+@@ -1,6 +1,7 @@
+ import React from 'react';
+ import ReactDOM from 'react-dom/client';
+ import App from './App';
++import './styles.css';
+ 
+ const rootElement = document.getElementById('root');
+ if (!rootElement) {
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package-lock.json" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package-lock.json"
+index fc86a51..739500d 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package-lock.json"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package-lock.json"
+@@ -1,12 +1,12 @@
+ {
+   "name": "sunflow-dashboard",
+-  "version": "1.11.0",
++  "version": "1.11.1",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "sunflow-dashboard",
+-      "version": "1.11.0",
++      "version": "1.11.1",
+       "dependencies": {
+         "@types/multer": "^2.0.0",
+         "@types/papaparse": "^5.5.2",
+@@ -27,9 +27,11 @@
+       },
+       "devDependencies": {
+         "@eslint/js": "^9.39.2",
++        "@fontsource/inter": "^5.2.8",
+         "@playwright/test": "^1.57.0",
+         "@semantic-release/changelog": "^6.0.3",
+         "@semantic-release/git": "^10.0.1",
++        "@tailwindcss/vite": "^4.1.18",
+         "@testing-library/jest-dom": "^6.5.0",
+         "@testing-library/react": "^16.0.0",
+         "@types/compression": "^1.8.1",
+@@ -1272,6 +1274,16 @@
+         "node": ">=14"
+       }
+     },
++    "node_modules/@fontsource/inter": {
++      "version": "5.2.8",
++      "resolved": "https://registry.npmjs.org/@fontsource/inter/-/inter-5.2.8.tgz",
++      "integrity": "sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==",
++      "dev": true,
++      "license": "OFL-1.1",
++      "funding": {
++        "url": "https://github.com/sponsors/ayuhito"
++      }
++    },
+     "node_modules/@gar/promisify": {
+       "version": "1.1.3",
+       "resolved": "https://registry.npmjs.org/@gar/promisify/-/promisify-1.1.3.tgz",
+@@ -2632,6 +2644,278 @@
+       "integrity": "sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==",
+       "license": "MIT"
+     },
++    "node_modules/@tailwindcss/node": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/node/-/node-4.1.18.tgz",
++      "integrity": "sha512-DoR7U1P7iYhw16qJ49fgXUlry1t4CpXeErJHnQ44JgTSKMaZUdf17cfn5mHchfJ4KRBZRFA/Coo+MUF5+gOaCQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@jridgewell/remapping": "^2.3.4",
++        "enhanced-resolve": "^5.18.3",
++        "jiti": "^2.6.1",
++        "lightningcss": "1.30.2",
++        "magic-string": "^0.30.21",
++        "source-map-js": "^1.2.1",
++        "tailwindcss": "4.1.18"
++      }
++    },
++    "node_modules/@tailwindcss/oxide": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.1.18.tgz",
++      "integrity": "sha512-EgCR5tTS5bUSKQgzeMClT6iCY3ToqE1y+ZB0AKldj809QXk1Y+3jB0upOYZrn9aGIzPtUsP7sX4QQ4XtjBB95A==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">= 10"
++      },
++      "optionalDependencies": {
++        "@tailwindcss/oxide-android-arm64": "4.1.18",
++        "@tailwindcss/oxide-darwin-arm64": "4.1.18",
++        "@tailwindcss/oxide-darwin-x64": "4.1.18",
++        "@tailwindcss/oxide-freebsd-x64": "4.1.18",
++        "@tailwindcss/oxide-linux-arm-gnueabihf": "4.1.18",
++        "@tailwindcss/oxide-linux-arm64-gnu": "4.1.18",
++        "@tailwindcss/oxide-linux-arm64-musl": "4.1.18",
++        "@tailwindcss/oxide-linux-x64-gnu": "4.1.18",
++        "@tailwindcss/oxide-linux-x64-musl": "4.1.18",
++        "@tailwindcss/oxide-wasm32-wasi": "4.1.18",
++        "@tailwindcss/oxide-win32-arm64-msvc": "4.1.18",
++        "@tailwindcss/oxide-win32-x64-msvc": "4.1.18"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-android-arm64": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-android-arm64/-/oxide-android-arm64-4.1.18.tgz",
++      "integrity": "sha512-dJHz7+Ugr9U/diKJA0W6N/6/cjI+ZTAoxPf9Iz9BFRF2GzEX8IvXxFIi/dZBloVJX/MZGvRuFA9rqwdiIEZQ0Q==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-darwin-arm64": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.18.tgz",
++      "integrity": "sha512-Gc2q4Qhs660bhjyBSKgq6BYvwDz4G+BuyJ5H1xfhmDR3D8HnHCmT/BSkvSL0vQLy/nkMLY20PQ2OoYMO15Jd0A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-darwin-x64": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-x64/-/oxide-darwin-x64-4.1.18.tgz",
++      "integrity": "sha512-FL5oxr2xQsFrc3X9o1fjHKBYBMD1QZNyc1Xzw/h5Qu4XnEBi3dZn96HcHm41c/euGV+GRiXFfh2hUCyKi/e+yw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-freebsd-x64": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-freebsd-x64/-/oxide-freebsd-x64-4.1.18.tgz",
++      "integrity": "sha512-Fj+RHgu5bDodmV1dM9yAxlfJwkkWvLiRjbhuO2LEtwtlYlBgiAT4x/j5wQr1tC3SANAgD+0YcmWVrj8R9trVMA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-linux-arm-gnueabihf": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm-gnueabihf/-/oxide-linux-arm-gnueabihf-4.1.18.tgz",
++      "integrity": "sha512-Fp+Wzk/Ws4dZn+LV2Nqx3IilnhH51YZoRaYHQsVq3RQvEl+71VGKFpkfHrLM/Li+kt5c0DJe/bHXK1eHgDmdiA==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-linux-arm64-gnu": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-gnu/-/oxide-linux-arm64-gnu-4.1.18.tgz",
++      "integrity": "sha512-S0n3jboLysNbh55Vrt7pk9wgpyTTPD0fdQeh7wQfMqLPM/Hrxi+dVsLsPrycQjGKEQk85Kgbx+6+QnYNiHalnw==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-linux-arm64-musl": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-musl/-/oxide-linux-arm64-musl-4.1.18.tgz",
++      "integrity": "sha512-1px92582HkPQlaaCkdRcio71p8bc8i/ap5807tPRDK/uw953cauQBT8c5tVGkOwrHMfc2Yh6UuxaH4vtTjGvHg==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-linux-x64-gnu": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.1.18.tgz",
++      "integrity": "sha512-v3gyT0ivkfBLoZGF9LyHmts0Isc8jHZyVcbzio6Wpzifg/+5ZJpDiRiUhDLkcr7f/r38SWNe7ucxmGW3j3Kb/g==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-linux-x64-musl": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.1.18.tgz",
++      "integrity": "sha512-bhJ2y2OQNlcRwwgOAGMY0xTFStt4/wyU6pvI6LSuZpRgKQwxTec0/3Scu91O8ir7qCR3AuepQKLU/kX99FouqQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-wasm32-wasi": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.1.18.tgz",
++      "integrity": "sha512-LffYTvPjODiP6PT16oNeUQJzNVyJl1cjIebq/rWWBF+3eDst5JGEFSc5cWxyRCJ0Mxl+KyIkqRxk1XPEs9x8TA==",
++      "bundleDependencies": [
++        "@napi-rs/wasm-runtime",
++        "@emnapi/core",
++        "@emnapi/runtime",
++        "@tybys/wasm-util",
++        "@emnapi/wasi-threads",
++        "tslib"
++      ],
++      "cpu": [
++        "wasm32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "@emnapi/core": "^1.7.1",
++        "@emnapi/runtime": "^1.7.1",
++        "@emnapi/wasi-threads": "^1.1.0",
++        "@napi-rs/wasm-runtime": "^1.1.0",
++        "@tybys/wasm-util": "^0.10.1",
++        "tslib": "^2.4.0"
++      },
++      "engines": {
++        "node": ">=14.0.0"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-win32-arm64-msvc": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.1.18.tgz",
++      "integrity": "sha512-HjSA7mr9HmC8fu6bdsZvZ+dhjyGCLdotjVOgLA2vEqxEBZaQo9YTX4kwgEvPCpRh8o4uWc4J/wEoFzhEmjvPbA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/oxide-win32-x64-msvc": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-x64-msvc/-/oxide-win32-x64-msvc-4.1.18.tgz",
++      "integrity": "sha512-bJWbyYpUlqamC8dpR7pfjA0I7vdF6t5VpUGMWRkXVE3AXgIZjYUYAK7II1GNaxR8J1SSrSrppRar8G++JekE3Q==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@tailwindcss/vite": {
++      "version": "4.1.18",
++      "resolved": "https://registry.npmjs.org/@tailwindcss/vite/-/vite-4.1.18.tgz",
++      "integrity": "sha512-jVA+/UpKL1vRLg6Hkao5jldawNmRo7mQYrZtNHMIVpLfLhDml5nMRUo/8MwoX2vNXvnaXNNMedrMfMugAVX1nA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@tailwindcss/node": "4.1.18",
++        "@tailwindcss/oxide": "4.1.18",
++        "tailwindcss": "4.1.18"
++      },
++      "peerDependencies": {
++        "vite": "^5.2.0 || ^6 || ^7"
++      }
++    },
+     "node_modules/@testing-library/dom": {
+       "version": "10.4.1",
+       "resolved": "https://registry.npmjs.org/@testing-library/dom/-/dom-10.4.1.tgz",
+@@ -5532,6 +5816,20 @@
+         "once": "^1.4.0"
+       }
+     },
++    "node_modules/enhanced-resolve": {
++      "version": "5.18.4",
++      "resolved": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.18.4.tgz",
++      "integrity": "sha512-LgQMM4WXU3QI+SYgEc2liRgznaD5ojbmY3sb8LxyguVkIg5FxdpTkvk72te2R38/TGKxH634oLxXRGY6d7AP+Q==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "graceful-fs": "^4.2.4",
++        "tapable": "^2.2.0"
++      },
++      "engines": {
++        "node": ">=10.13.0"
++      }
++    },
+     "node_modules/entities": {
+       "version": "6.0.1",
+       "resolved": "https://registry.npmjs.org/entities/-/entities-6.0.1.tgz",
+@@ -8320,6 +8618,17 @@
+         "node": ">= 0.6.0"
+       }
+     },
++    "node_modules/jiti": {
++      "version": "2.6.1",
++      "resolved": "https://registry.npmjs.org/jiti/-/jiti-2.6.1.tgz",
++      "integrity": "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==",
++      "dev": true,
++      "license": "MIT",
++      "peer": true,
++      "bin": {
++        "jiti": "lib/jiti-cli.mjs"
++      }
++    },
+     "node_modules/js-tokens": {
+       "version": "4.0.0",
+       "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz",
+@@ -8565,6 +8874,268 @@
+         "node": ">= 0.8.0"
+       }
+     },
++    "node_modules/lightningcss": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss/-/lightningcss-1.30.2.tgz",
++      "integrity": "sha512-utfs7Pr5uJyyvDETitgsaqSyjCb2qNRAtuqUeWIAKztsOYdcACf2KtARYXg2pSvhkt+9NfoaNY7fxjl6nuMjIQ==",
++      "dev": true,
++      "license": "MPL-2.0",
++      "peer": true,
++      "dependencies": {
++        "detect-libc": "^2.0.3"
++      },
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      },
++      "optionalDependencies": {
++        "lightningcss-android-arm64": "1.30.2",
++        "lightningcss-darwin-arm64": "1.30.2",
++        "lightningcss-darwin-x64": "1.30.2",
++        "lightningcss-freebsd-x64": "1.30.2",
++        "lightningcss-linux-arm-gnueabihf": "1.30.2",
++        "lightningcss-linux-arm64-gnu": "1.30.2",
++        "lightningcss-linux-arm64-musl": "1.30.2",
++        "lightningcss-linux-x64-gnu": "1.30.2",
++        "lightningcss-linux-x64-musl": "1.30.2",
++        "lightningcss-win32-arm64-msvc": "1.30.2",
++        "lightningcss-win32-x64-msvc": "1.30.2"
++      }
++    },
++    "node_modules/lightningcss-android-arm64": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-android-arm64/-/lightningcss-android-arm64-1.30.2.tgz",
++      "integrity": "sha512-BH9sEdOCahSgmkVhBLeU7Hc9DWeZ1Eb6wNS6Da8igvUwAe0sqROHddIlvU06q3WyXVEOYDZ6ykBZQnjTbmo4+A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-darwin-arm64": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.2.tgz",
++      "integrity": "sha512-ylTcDJBN3Hp21TdhRT5zBOIi73P6/W0qwvlFEk22fkdXchtNTOU4Qc37SkzV+EKYxLouZ6M4LG9NfZ1qkhhBWA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-darwin-x64": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.30.2.tgz",
++      "integrity": "sha512-oBZgKchomuDYxr7ilwLcyms6BCyLn0z8J0+ZZmfpjwg9fRVZIR5/GMXd7r9RH94iDhld3UmSjBM6nXWM2TfZTQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-freebsd-x64": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.30.2.tgz",
++      "integrity": "sha512-c2bH6xTrf4BDpK8MoGG4Bd6zAMZDAXS569UxCAGcA7IKbHNMlhGQ89eRmvpIUGfKWNVdbhSbkQaWhEoMGmGslA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-linux-arm-gnueabihf": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.30.2.tgz",
++      "integrity": "sha512-eVdpxh4wYcm0PofJIZVuYuLiqBIakQ9uFZmipf6LF/HRj5Bgm0eb3qL/mr1smyXIS1twwOxNWndd8z0E374hiA==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-linux-arm64-gnu": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.30.2.tgz",
++      "integrity": "sha512-UK65WJAbwIJbiBFXpxrbTNArtfuznvxAJw4Q2ZGlU8kPeDIWEX1dg3rn2veBVUylA2Ezg89ktszWbaQnxD/e3A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-linux-arm64-musl": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.30.2.tgz",
++      "integrity": "sha512-5Vh9dGeblpTxWHpOx8iauV02popZDsCYMPIgiuw97OJ5uaDsL86cnqSFs5LZkG3ghHoX5isLgWzMs+eD1YzrnA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-linux-x64-gnu": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.30.2.tgz",
++      "integrity": "sha512-Cfd46gdmj1vQ+lR6VRTTadNHu6ALuw2pKR9lYq4FnhvgBc4zWY1EtZcAc6EffShbb1MFrIPfLDXD6Xprbnni4w==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-linux-x64-musl": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.30.2.tgz",
++      "integrity": "sha512-XJaLUUFXb6/QG2lGIW6aIk6jKdtjtcffUT0NKvIqhSBY3hh9Ch+1LCeH80dR9q9LBjG3ewbDjnumefsLsP6aiA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-win32-arm64-msvc": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.30.2.tgz",
++      "integrity": "sha512-FZn+vaj7zLv//D/192WFFVA0RgHawIcHqLX9xuWiQt7P0PtdFEVaxgF9rjM/IRYHQXNnk61/H/gb2Ei+kUQ4xQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
++    "node_modules/lightningcss-win32-x64-msvc": {
++      "version": "1.30.2",
++      "resolved": "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.30.2.tgz",
++      "integrity": "sha512-5g1yc73p+iAkid5phb4oVFMB45417DkRevRbt/El/gKXJk4jid+vPFF/AXbxn05Aky8PapwzZrdJShv5C0avjw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MPL-2.0",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/parcel"
++      }
++    },
+     "node_modules/lines-and-columns": {
+       "version": "1.2.4",
+       "resolved": "https://registry.npmjs.org/lines-and-columns/-/lines-and-columns-1.2.4.tgz",
+@@ -14520,6 +15091,20 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/tapable": {
++      "version": "2.3.0",
++      "resolved": "https://registry.npmjs.org/tapable/-/tapable-2.3.0.tgz",
++      "integrity": "sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=6"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/webpack"
++      }
++    },
+     "node_modules/tar": {
+       "version": "6.2.1",
+       "resolved": "https://registry.npmjs.org/tar/-/tar-6.2.1.tgz",
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package.json" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package.json"
+index 0b39da0..38159d4 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/package.json"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/package.json"
+@@ -16,6 +16,7 @@
+     "preview": "vite preview",
+     "test": "vitest",
+     "test:run": "vitest run",
++    "test:ingress": "npm run build && vitest run tests/ingress.staticpaths.test.ts",
+     "test:e2e": "playwright test",
+     "test:e2e:ui": "playwright test --ui",
+     "playwright:install": "playwright install",
+@@ -44,9 +45,11 @@
+   },
+   "devDependencies": {
+     "@eslint/js": "^9.39.2",
++    "@fontsource/inter": "^5.2.8",
+     "@playwright/test": "^1.57.0",
+     "@semantic-release/changelog": "^6.0.3",
+     "@semantic-release/git": "^10.0.1",
++    "@tailwindcss/vite": "^4.1.18",
+     "@testing-library/jest-dom": "^6.5.0",
+     "@testing-library/react": "^16.0.0",
+     "@types/compression": "^1.8.1",
+@@ -79,7 +82,12 @@
+     "plugins": [
+       "@semantic-release/commit-analyzer",
+       "@semantic-release/release-notes-generator",
+-      "@semantic-release/changelog",
++      [
++        "@semantic-release/changelog",
++        {
++          "changelogFile": "docs/CHANGELOG.md"
++        }
++      ],
+       [
+         "@semantic-release/npm",
+         {
+@@ -97,7 +105,7 @@
+         {
+           "assets": [
+             "package.json",
+-            "CHANGELOG.md"
++            "docs/CHANGELOG.md"
+           ],
+           "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+         }
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/check_db.js" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/scripts/check_db.js"
+similarity index 100%
+rename from "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/check_db.js"
+rename to "C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/scripts/check_db.js"
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/server.js" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/server.js"
+index 449ddce..c410449 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/server.js"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/server.js"
+@@ -74,10 +74,15 @@ const resolveSafeDataDir = (maybeDir) => {
+         return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+     };
+ 
++    // Home Assistant add-ons persist data under /data.
++    // Allow it explicitly so the add-on uses Supervisor-managed storage.
++    const haDataDir = '/data';
++
+     if (
+         isWithin(__dirname, resolved) ||
+         isWithin(process.cwd(), resolved) ||
+-        isWithin(os.tmpdir(), resolved)
++        isWithin(os.tmpdir(), resolved) ||
++        isWithin(haDataDir, resolved)
+     ) {
+         return resolved;
+     }
+@@ -234,7 +239,20 @@ const isAdminRequest = (req) => {
+ 
+ const sanitizeInverterHost = (host) => {
+     if (!host || typeof host !== 'string') return null;
+-    const h = host.trim();
++    let h = host.trim();
++
++    // Be forgiving about input format (users often paste full URLs or paths).
++    // We only persist IPv4[:port] and keep the private-range constraint.
++    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(h)) {
++        // Only accept http/https URLs and extract IPv4[:port] from the authority.
++        // (Using URL() would drop default ports like :80, which users sometimes paste.)
++        const mUrl = /^https?:\/\/([0-9]{1,3}(?:\.[0-9]{1,3}){3})(?::([0-9]{1,5}))?(?:[\/?#]|$)/i.exec(h);
++        if (!mUrl) return null;
++        h = mUrl[1] + (mUrl[2] ? `:${mUrl[2]}` : '');
++    } else {
++        // Strip any path/query/fragment if user pasted `host/path?...` without scheme.
++        h = h.split('#')[0].split('?')[0].split('/')[0].trim();
++    }
+ 
+     // Must be IPv4[:port] only. This keeps the inverter request constrained to typical LAN IPs.
+     const m = /^([0-9]{1,3}(?:\.[0-9]{1,3}){3})(?::([0-9]{1,5}))?$/.exec(h);
+@@ -452,8 +470,9 @@ const getConfig = () => {
+             console.error("Error parsing config.json:", e.message);
+         }
+     }
+-    // Ensure default appliances exist if not present
+-    if (!config.appliances || config.appliances.length === 0) {
++    // Ensure default appliances exist if not present.
++    // IMPORTANT: An empty array is a valid user choice ("no appliances").
++    if (config.appliances === undefined || config.appliances === null || !Array.isArray(config.appliances)) {
+         config.appliances = DEFAULT_APPLIANCES;
+     }
+ 
+@@ -1326,14 +1345,20 @@ app.get('/api/dynamic-pricing/awattar/compare', async (req, res) => {
+         db.all("SELECT valid_from, cost_per_kwh, feed_in_tariff FROM tariffs ORDER BY valid_from ASC", [], (tErr, tariffRows) => {
+             if (tErr) return res.status(500).json({ error: tErr.message });
+ 
+-            const tariffs = (tariffRows || []).map(t => ({
++            let tariffs = (tariffRows || []).map(t => ({
+                 validFrom: t.valid_from,
+                 costPerKwh: t.cost_per_kwh,
+                 feedInTariff: t.feed_in_tariff
+             }));
+ 
+             if (tariffs.length === 0) {
+-                return res.status(400).json({ error: "No tariffs configured" });
++                // Be resilient: if the DB tariff table is empty (e.g., first run or initialization race),
++                // fall back to config defaults so comparisons still work.
++                tariffs = [{
++                    validFrom: '2000-01-01',
++                    costPerKwh: (typeof config.costPerKwh === 'number' && Number.isFinite(config.costPerKwh)) ? config.costPerKwh : 0.30,
++                    feedInTariff: (typeof config.feedInTariff === 'number' && Number.isFinite(config.feedInTariff)) ? config.feedInTariff : 0.08,
++                }];
+             }
+ 
+             getHourlyGridEnergyKwh(startTs, endTs, (eErr, hours) => {
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/services/api.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/services/api.ts"
+index 7862591..6613604 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/services/api.ts"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/services/api.ts"
+@@ -1,81 +1,208 @@
+ 
+ import { InverterData, SystemConfig, HistoryData, TimeRange, Tariff, Expense, RoiData, SystemInfo, ForecastData, BatteryHealthData, SimulationDataPoint, AwattarComparisonResponse, AwattarComparePeriod } from '../types';
+ 
+-const API_BASE = ''; 
++// IMPORTANT (Home Assistant Ingress):
++// Use URLs that stay under the ingress path.
++// Absolute paths like `/api/...` would hit Home Assistant Core instead, so when
++// running under ingress we *prefix* requests with `/api/hassio_ingress/<token>/`.
++//
++// Why not plain relative `api/...`?
++// Some HA deployments load the UI under deeper paths; a plain relative URL can
++// resolve to the wrong location and return 404.
++const API_BASE = (() => {
++  try {
++    if (typeof window === 'undefined') return '';
++    const pathname = String(window.location?.pathname || '');
++    const m = /^(.*\/api\/hassio_ingress\/[^\/]+)(?:\/|$)/.exec(pathname);
++    if (m && m[1]) return `${m[1]}/`;
++    return '';
++  } catch {
++    return '';
++  }
++})();
++
++const apiUrl = (path: string): string => {
++  const p = path.startsWith('/') ? path.slice(1) : path;
++  const base = API_BASE ? API_BASE.replace(/\/+$/, '') + '/' : '';
++  return `${base}${p}`;
++};
++
++const ADMIN_TOKEN_STORAGE_KEY = 'sunflow_admin_token';
++
++export const getAdminToken = (): string | null => {
++  try {
++    if (typeof window === 'undefined') return null;
++    const t = window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
++    if (!t) return null;
++    const trimmed = t.trim();
++    return trimmed ? trimmed : null;
++  } catch {
++    return null;
++  }
++};
++
++export const setAdminToken = (token: string | null): void => {
++  try {
++    if (typeof window === 'undefined') return;
++    const trimmed = (token ?? '').trim();
++    if (!trimmed) {
++      window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
++      return;
++    }
++    window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, trimmed);
++  } catch {
++    // ignore
++  }
++};
++
++const withAuthHeaders = (headers?: HeadersInit): HeadersInit | undefined => {
++  const token = getAdminToken();
++  if (!token) return headers;
++  const h = new Headers(headers);
++  if (!h.has('Authorization')) h.set('Authorization', `Bearer ${token}`);
++  return h;
++};
++
++const apiFetch = (path: string, init?: RequestInit): Promise<Response> => {
++  return fetch(apiUrl(path), {
++    ...init,
++    headers: withAuthHeaders(init?.headers),
++  });
++};
++
++const extractErrorMessage = async (res: Response): Promise<string | null> => {
++  // Prefer JSON { error: string } if available.
++  // Some unit tests/mocks only implement json() and not text().
++  try {
++    const maybeJson = (res as any).json;
++    if (typeof maybeJson === 'function') {
++      const j = await maybeJson.call(res);
++      if (j && typeof j === 'object' && 'error' in j) {
++        const errVal = (j as any).error;
++        if (typeof errVal === 'string' && errVal.trim()) return errVal;
++      }
++    }
++  } catch {
++    // ignore
++  }
++
++  let text = '';
++  try {
++    const maybeText = (res as any).text;
++    if (typeof maybeText !== 'function') return null;
++    text = await maybeText.call(res);
++  } catch {
++    return null;
++  }
++
++  const trimmed = String(text).trim();
++  if (!trimmed) return null;
++
++  // If it looks like JSON, try extracting error from it.
++  const contentType = ((res.headers?.get?.('content-type') as string) || '').toLowerCase();
++  const looksJson = contentType.includes('application/json') || trimmed.startsWith('{') || trimmed.startsWith('[');
++  if (looksJson) {
++    try {
++      const j = JSON.parse(trimmed);
++      if (j && typeof j === 'object' && 'error' in j) {
++        const errVal = (j as any).error;
++        if (typeof errVal === 'string' && errVal.trim()) return errVal;
++      }
++    } catch {
++      // ignore
++    }
++  }
++
++  // Fall back to a short snippet of text/HTML.
++  return trimmed.length > 200 ? trimmed.slice(0, 200) + 'ÔÇª' : trimmed;
++};
+ 
+ export const getRealtimeData = async (): Promise<InverterData> => {
+-  const res = await fetch(`${API_BASE}/api/data`);
++  const res = await apiFetch('api/data');
+   if (!res.ok) throw new Error("API call failed");
+   return res.json();
+ };
+ 
+ export const getHistory = async (range: TimeRange, startDate?: string, endDate?: string, offset: number = 0): Promise<HistoryData> => {
+-  let url = `${API_BASE}/api/history?range=${range}&offset=${offset}`;
++  let url = apiUrl(`api/history?range=${range}&offset=${offset}`);
+   if (range === 'custom' && startDate && endDate) {
+     url += `&start=${startDate}&end=${endDate}`;
+   }
+   
+-  const res = await fetch(url);
++  const res = await fetch(url, { headers: withAuthHeaders() });
+   if (!res.ok) throw new Error("History call failed");
+   return res.json();
+ };
+ 
+ export const getRoiData = async (): Promise<RoiData> => {
+-  const res = await fetch(`${API_BASE}/api/roi`);
++  const res = await apiFetch('api/roi');
+   if (!res.ok) throw new Error("ROI data call failed");
+   return res.json();
+ };
+ 
+ export const getBatteryHealth = async (): Promise<BatteryHealthData> => {
+-  const res = await fetch(`${API_BASE}/api/battery-health`);
++  const res = await apiFetch('api/battery-health');
+   if (!res.ok) throw new Error("Battery Health data call failed");
+   return res.json();
+ };
+ 
+ export const getSimulationData = async (): Promise<SimulationDataPoint[]> => {
+-    const res = await fetch(`${API_BASE}/api/simulation-data`);
++  const res = await apiFetch('api/simulation-data');
+     if (!res.ok) throw new Error("Simulation data call failed");
+     return res.json();
+ };
+ 
+ export const getConfig = async (): Promise<SystemConfig> => {
+-  const res = await fetch(`${API_BASE}/api/config`);
++  const res = await apiFetch('api/config');
+   if (!res.ok) throw new Error("API call failed");
+   return res.json();
+ };
+ 
+ export const saveConfig = async (config: SystemConfig): Promise<void> => {
+-  const res = await fetch(`${API_BASE}/api/config`, {
++  const res = await apiFetch('api/config', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(config)
+   });
+-  if (!res.ok) throw new Error("API call failed");
++  if (!res.ok) {
++    const msg = await extractErrorMessage(res);
++    if (msg) throw new Error(msg);
++    throw new Error(`Failed to save settings (HTTP ${res.status})`);
++  }
+ };
+ 
+ export const getSystemInfo = async (): Promise<SystemInfo> => {
+-  const res = await fetch(`${API_BASE}/api/info`);
++  const res = await apiFetch('api/info');
+   if (!res.ok) throw new Error("Failed to fetch system info");
+   return res.json();
+ };
+ 
+ // --- Forecast API ---
+ export const getForecast = async (): Promise<ForecastData> => {
+-    const res = await fetch(`${API_BASE}/api/forecast`);
++  const res = await apiFetch('api/forecast');
+     if (!res.ok) throw new Error("Failed to fetch forecast");
+     return res.json();
+ };
+ 
++export const testNotification = async (): Promise<void> => {
++  const res = await apiFetch('api/test-notification', {
++    method: 'POST',
++    headers: { 'Content-Type': 'application/json' },
++    body: JSON.stringify({}),
++  });
++  if (!res.ok) throw new Error('Failed to send test notification');
++};
++
+ // --- Tariff API ---
+ 
+ export const getTariffs = async (): Promise<Tariff[]> => {
+-  const res = await fetch(`${API_BASE}/api/tariffs`);
++  const res = await apiFetch('api/tariffs');
+   if (!res.ok) throw new Error("Failed to fetch tariffs");
+   return res.json();
+ };
+ 
+ export const addTariff = async (tariff: Tariff): Promise<void> => {
+-  const res = await fetch(`${API_BASE}/api/tariffs`, {
++  const res = await apiFetch('api/tariffs', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(tariff)
+@@ -84,7 +211,7 @@ export const addTariff = async (tariff: Tariff): Promise<void> => {
+ };
+ 
+ export const deleteTariff = async (id: number): Promise<void> => {
+-  const res = await fetch(`${API_BASE}/api/tariffs/${id}`, {
++  const res = await apiFetch(`api/tariffs/${id}`, {
+     method: 'DELETE'
+   });
+   if (!res.ok) throw new Error("Failed to delete tariff");
+@@ -93,13 +220,13 @@ export const deleteTariff = async (id: number): Promise<void> => {
+ // --- Expenses API ---
+ 
+ export const getExpenses = async (): Promise<Expense[]> => {
+-  const res = await fetch(`${API_BASE}/api/expenses`);
++  const res = await apiFetch('api/expenses');
+   if (!res.ok) throw new Error("Failed to fetch expenses");
+   return res.json();
+ };
+ 
+ export const addExpense = async (expense: Expense): Promise<void> => {
+-  const res = await fetch(`${API_BASE}/api/expenses`, {
++  const res = await apiFetch('api/expenses', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(expense)
+@@ -108,7 +235,7 @@ export const addExpense = async (expense: Expense): Promise<void> => {
+ };
+ 
+ export const deleteExpense = async (id: number): Promise<void> => {
+-  const res = await fetch(`${API_BASE}/api/expenses/${id}`, {
++  const res = await apiFetch(`api/expenses/${id}`, {
+     method: 'DELETE'
+   });
+   if (!res.ok) throw new Error("Failed to delete expense");
+@@ -125,7 +252,7 @@ export const previewCsv = async (file: File): Promise<CsvPreview> => {
+     const formData = new FormData();
+     formData.append('file', file);
+     
+-    const res = await fetch(`${API_BASE}/api/preview-csv`, {
++  const res = await apiFetch('api/preview-csv', {
+         method: 'POST',
+         body: formData
+     });
+@@ -139,7 +266,7 @@ export const importCsv = async (file: File, mapping: any): Promise<{success: boo
+     formData.append('file', file);
+     formData.append('mapping', JSON.stringify(mapping));
+     
+-    const res = await fetch(`${API_BASE}/api/import-csv`, {
++  const res = await apiFetch('api/import-csv', {
+         method: 'POST',
+         body: formData
+     });
+@@ -168,7 +295,7 @@ export const getAwattarComparison = async (params: AwattarComparisonParams = {})
+   if (params.surchargeCt !== undefined) qs.set('surchargeCt', String(params.surchargeCt));
+   if (params.vatPercent !== undefined) qs.set('vatPercent', String(params.vatPercent));
+ 
+-  const res = await fetch(`${API_BASE}/api/dynamic-pricing/awattar/compare?${qs.toString()}`);
++  const res = await apiFetch(`api/dynamic-pricing/awattar/compare?${qs.toString()}`);
+   if (!res.ok) {
+     let msg = 'Failed to fetch aWATTar comparison';
+     try {
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/styles.css" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/styles.css"
+new file mode 100644
+index 0000000..996194e
+--- /dev/null
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/styles.css"
+@@ -0,0 +1,51 @@
++@import "tailwindcss";
++@import "@fontsource/inter/latin.css";
++
++:root {
++  color-scheme: dark;
++}
++
++body {
++  background-color: #0f172a; /* slate-900 */
++  color: #e2e8f0; /* slate-200 */
++  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji",
++    "Segoe UI Emoji";
++  -webkit-font-smoothing: antialiased;
++  -moz-osx-font-smoothing: grayscale;
++  text-rendering: optimizeLegibility;
++}
++
++/* Custom Scrollbar */
++::-webkit-scrollbar {
++  width: 8px;
++  height: 8px;
++}
++
++::-webkit-scrollbar-track {
++  background: #1e293b;
++}
++
++::-webkit-scrollbar-thumb {
++  background: #475569;
++  border-radius: 4px;
++}
++
++::-webkit-scrollbar-thumb:hover {
++  background: #64748b;
++}
++
++/* Animations */
++@keyframes fade-in {
++  from {
++    opacity: 0;
++    transform: translateY(10px);
++  }
++  to {
++    opacity: 1;
++    transform: translateY(0);
++  }
++}
++
++.animate-fade-in {
++  animation: fade-in 0.5s ease-out forwards;
++}
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tailwind.config.js" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tailwind.config.js"
+new file mode 100644
+index 0000000..a6b2748
+--- /dev/null
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tailwind.config.js"
+@@ -0,0 +1,11 @@
++/** @type {import('tailwindcss').Config} */
++export default {
++  content: [
++    './index.html',
++    './**/*.{ts,tsx,js,jsx}',
++  ],
++  theme: {
++    extend: {},
++  },
++  plugins: [],
++};
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/AmortizationWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/AmortizationWidget.test.tsx"
+index 91cac06..121c305 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/AmortizationWidget.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/AmortizationWidget.test.tsx"
+@@ -5,13 +5,13 @@ import AmortizationWidget from '../components/AmortizationWidget';
+ import React from 'react';
+ 
+ describe('AmortizationWidget Component', () => {
+-    it('zeigt Platzhalter bei fehlenden Daten', () => {
++    it('shows placeholder when data is missing', () => {
+         render(<AmortizationWidget roiData={null} currency="EUR" />);
+         expect(screen.getByText(/Amortization Tracker/i)).toBeInTheDocument();
+         expect(screen.getByText(/Configure your system/i)).toBeInTheDocument();
+     });
+ 
+-    it('zeigt ROI Daten korrekt an', () => {
++    it('shows ROI data correctly', () => {
+         const mockRoi = {
+             totalInvested: 10000,
+             totalReturned: 2500,
+@@ -27,7 +27,7 @@ describe('AmortizationWidget Component', () => {
+         expect(screen.getByText(/10[.,]000/)).toBeInTheDocument(); // Invested
+     });
+ 
+-    it('zeigt "Paid Off" Status an', () => {
++    it('shows "Paid Off" status', () => {
+         const mockRoi = {
+             totalInvested: 10000,
+             totalReturned: 12000,
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/App.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/App.test.tsx"
+index fa7f060..ca3e97d 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/App.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/App.test.tsx"
+@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
+ import App from '../App';
+ import * as api from '../services/api';
+ 
+-// 1. Wir mocken das ganze API-Modul, damit wir keine echten Netzwerk-Requests machen
++// Mock the entire API module so we do not perform real network requests.
+ vi.mock('../services/api');
+ 
+ describe('SunFlow App Integration', () => {
+@@ -11,20 +11,19 @@ describe('SunFlow App Integration', () => {
+     vi.clearAllMocks();
+   });
+ 
+-  it('zeigt den Ladebildschirm beim Start', async () => {
+-    // Wir lassen die Promises ungel├Âst oder l├Âsen sie langsam auf,
+-    // um den initialen Zustand zu sehen
++  it('shows the loading screen on startup', async () => {
++    // Resolve promises (or resolve slowly) to observe the initial state
+     (api.getConfig as any).mockResolvedValue({}); 
+     (api.getSystemInfo as any).mockResolvedValue({});
+ 
+     render(<App />);
+     
+-    // Pr├╝fen auf Text, der nur im Ladezustand da ist
++    // Check for text that appears only in the loading state
+     expect(await screen.findByText(/Connecting to Fronius Inverter/i)).toBeInTheDocument();
+   });
+ 
+-  it('l├ñdt das Dashboard, wenn Konfiguration vorhanden ist', async () => {
+-    // 2. Wir definieren Test-Daten, die die API zur├╝ckgeben soll
++  it('loads the dashboard when configuration is present', async () => {
++    // Define test data that the API should return
+     const mockConfig = { 
+         inverterIp: '192.168.0.50', 
+         currency: 'EUR', 
+@@ -39,24 +38,24 @@ describe('SunFlow App Integration', () => {
+         selfConsumption: 20
+     };
+ 
+-    // 3. Mocks verbinden
++    // Wire mocks
+     (api.getConfig as any).mockResolvedValue(mockConfig);
+     (api.getSystemInfo as any).mockResolvedValue({ version: '1.0.0', updateAvailable: false });
+     (api.getRealtimeData as any).mockResolvedValue(mockRealtimeData);
+     
+-    // Leere Dummies f├╝r die Charts, damit nichts crasht
++    // Empty chart dummies so nothing crashes
+     (api.getHistory as any).mockResolvedValue({ chart: [], stats: { production: 0, consumption: 0, imported: 0, exported: 0, costSaved: 0, earnings: 0 } });
+     (api.getRoiData as any).mockResolvedValue({ totalInvested: 0, roiPercent: 0 });
+     (api.getForecast as any).mockResolvedValue({ forecasts: [] });
+ 
+     render(<App />);
+ 
+-    // 4. Warten, bis der Titel "SunFlow" erscheint (Laden beendet)
++    // Wait until the title "SunFlow" appears (loading finished)
+     await waitFor(() => {
+         expect(screen.getByText(/SunFlow/i)).toBeInTheDocument();
+     });
+ 
+-    // Pr├╝fen, ob der Settings-Button gerendert wurde (Teil des Dashboards)
++    // Verify the Settings button is rendered (part of the dashboard)
+     expect(screen.getByTitle(/Settings/i)).toBeInTheDocument();
+   });
+ });
+\ No newline at end of file
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryHealthWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryHealthWidget.test.tsx"
+index e6ead3a..2f93811 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryHealthWidget.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryHealthWidget.test.tsx"
+@@ -24,12 +24,12 @@ vi.mock('recharts', async () => {
+ describe('BatteryHealthWidget', () => {
+   const nominalCapacity = 10; // 10 kWh
+ 
+-  it('zeigt "Not enough data" wenn keine Datenpunkte vorhanden sind', () => {
++  it('shows "Not enough data" when there are no data points', () => {
+     render(<BatteryHealthWidget data={null} nominalCapacity={nominalCapacity} />);
+     expect(screen.getByText(/Not enough data yet/i)).toBeInTheDocument();
+   });
+ 
+-  it('zeigt Status "Excellent" bei hohem SOH (>90%)', () => {
++  it('shows status "Excellent" when SOH is high (>90%)', () => {
+     const mockData: BatteryHealthData = {
+         dataPoints: [{ date: '2023-01-01', efficiency: 95, estimatedCapacity: 9.8, chargeCycles: 1 }],
+         averageEfficiency: 95,
+@@ -42,7 +42,7 @@ describe('BatteryHealthWidget', () => {
+     expect(screen.getByText('9.8')).toBeInTheDocument(); // Capacity Display
+   });
+ 
+-  it('zeigt Status "Degrading" bei mittlerem SOH (<80%)', () => {
++  it('shows status "Degrading" when SOH is medium (<80%)', () => {
+     const mockData: BatteryHealthData = {
+         dataPoints: [{ date: '2023-01-01', efficiency: 90, estimatedCapacity: 7.5, chargeCycles: 1 }],
+         averageEfficiency: 90,
+@@ -54,7 +54,7 @@ describe('BatteryHealthWidget', () => {
+     expect(screen.getByText('Degrading')).toBeInTheDocument();
+   });
+ 
+-  it('zeigt Status "Poor" bei kritischem SOH (<70%)', () => {
++  it('shows status "Poor" when SOH is critical (<70%)', () => {
+     const mockData: BatteryHealthData = {
+         dataPoints: [{ date: '2023-01-01', efficiency: 80, estimatedCapacity: 6.0, chargeCycles: 1 }],
+         averageEfficiency: 80,
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryWidget.test.tsx"
+index 5a6641b..d377a3a 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/BatteryWidget.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/BatteryWidget.test.tsx"
+@@ -8,13 +8,13 @@ import React from 'react';
+ import { Battery } from 'lucide-react';
+ 
+ describe('BatteryWidget Component', () => {
+-    it('zeigt SOC korrekt an', () => {
++    it('shows SOC correctly', () => {
+         // Power=0 -> Idle
+         render(<BatteryWidget soc={75} power={0} state="idle" capacity={10} />);
+         expect(screen.getByText('75')).toBeInTheDocument();
+     });
+ 
+-    it('zeigt Status Text an (Charging)', () => {
++    it('shows status text (Charging)', () => {
+         // Power < -10 (Charging)
+         render(<BatteryWidget soc={50} power={-500} state="charging" capacity={10} />);
+         // Text might be dynamic or inside component, checking based on "Charging" text presence
+@@ -28,13 +28,13 @@ describe('BatteryWidget Component', () => {
+         expect(screen.getByText(/Charging/i)).toBeInTheDocument();
+     });
+ 
+-    it('zeigt Status Text an (Discharging)', () => {
++    it('shows status text (Discharging)', () => {
+         // Power > 10 (Discharging)
+         render(<BatteryWidget soc={50} power={500} state="discharging" capacity={10} />);
+         expect(screen.getByText(/Discharging/i)).toBeInTheDocument();
+     });
+ 
+-    it('reagiert auf leeren SOC', () => {
++    it('handles empty SOC', () => {
+         render(<BatteryWidget soc={0} power={0} state="idle" capacity={10} />);
+         expect(screen.getByText(/0/)).toBeInTheDocument();
+     });
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Charts.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Charts.test.tsx"
+index 915eb28..c7d5cf8 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Charts.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Charts.test.tsx"
+@@ -23,11 +23,11 @@ describe('Chart Components', () => {
+         { timestamp: '2023-01-01 13:00', production: 1200, consumption: 600, grid: -600, battery: 0 }
+     ];
+ 
+-    it('EnergyChart rendert ohne Fehler', () => {
++    it('EnergyChart renders without errors', () => {
+         render(<EnergyChart history={mockData} timeRange="day" />);
+     });
+ 
+-    it('BatteryChart rendert ohne Fehler', () => {
++    it('BatteryChart renders without errors', () => {
+         const batData = [
+             { timestamp: '2023-01-01 12:00', soc: 50, battery: 1000 },
+             { timestamp: '2023-01-01 13:00', soc: 60, battery: 1000 }
+@@ -35,7 +35,7 @@ describe('Chart Components', () => {
+         render(<BatteryChart history={batData} timeRange="day" />);
+     });
+     
+-    it('EfficiencyChart rendert ohne Fehler', () => {
++    it('EfficiencyChart renders without errors', () => {
+          // Fix: EfficiencyChart expects history prop based on failure 'history.length'
+          // Assuming it takes same shape as others or likely the dataPoints array directly?
+          // Let's assume it takes 'history' prop which is the array.
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/CsvImporter.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/CsvImporter.test.tsx"
+index 317b8d6..f7039a5 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/CsvImporter.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/CsvImporter.test.tsx"
+@@ -32,12 +32,12 @@ describe('CsvImporter Component', () => {
+         vi.clearAllMocks();
+     });
+ 
+-    it('beginnt im Upload-Schritt', () => {
++    it('starts in the upload step', () => {
+         render(<CsvImporter />);
+         expect(screen.getByText(/Click to upload CSV/i)).toBeInTheDocument();
+     });
+ 
+-    it('wechselt zu Step 2 (Mapping) nach Dateiwahl', async () => {
++    it('moves to step 2 (mapping) after selecting a file', async () => {
+         const { container } = render(<CsvImporter />);
+         
+         // Mock API Response
+@@ -61,10 +61,10 @@ describe('CsvImporter Component', () => {
+         const input = container.querySelector('input[type="file"]');
+         
+         if (input) {
+-            // Simuliere Upload
++            // Simulate upload
+             fireEvent.change(input, { target: { files: [file] } });
+             
+-            // Warten auf API Call und State Change
++            // Wait for API call and state change
+             await waitFor(() => {
+                 // Check for UI element unique to Step 2 (Mapping)
+                 // Note: "Configure Column Mapping" text was removed/changed. 
+@@ -76,7 +76,7 @@ describe('CsvImporter Component', () => {
+         }
+     });
+ 
+-    it('f├╝hrt Import aus wenn Mapping gesetzt ist', async () => {
++    it('runs import when mapping is set', async () => {
+         // Mock API Response
+         vi.mocked(api.previewCsv).mockResolvedValue({
+             headers: ['timestamp', 'power'],
+@@ -104,17 +104,17 @@ describe('CsvImporter Component', () => {
+             expect(screen.getByText(/Timestamp \(Required\)/i)).toBeInTheDocument();
+         });
+ 
+-        // Mapping setzen (Select Timestamp)
++        // Set mapping (select Timestamp)
+         const selects = screen.getAllByRole('combobox');
+         
+-        // Wir m├╝ssen sicherstellen, dass die Optionen auch geladen sind (aus Meta fields des Mocks)
++        // Ensure options are loaded (from meta fields in the mock)
+         fireEvent.change(selects[0], { target: { value: 'timestamp' } }); 
+ 
+-        // Import Button klicken
++        // Click Import button
+         const importBtn = screen.getByRole('button', { name: /Start Import/i });
+         fireEvent.click(importBtn);
+ 
+-        // API Call Check
++        // API call check
+         await waitFor(() => {
+            expect(api.importCsv).toHaveBeenCalled();
+         });
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Dashboard.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Dashboard.test.tsx"
+index a64e541..abaf0d7 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/Dashboard.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/Dashboard.test.tsx"
+@@ -48,35 +48,35 @@ describe('Dashboard Component', () => {
+     });
+   });
+ 
+-  it('zeigt Skeleton Loader, solange Historie l├ñdt', async () => {
+-    // Wir lassen getHistory h├ñngen (Promise ohne Resolve), um den Loading State zu erzwingen
++  it('shows skeleton loader while history is loading', async () => {
++    // Keep getHistory pending (never resolves) to force the loading state
+     (api.getHistory as any).mockReturnValue(new Promise(() => {}));
+ 
+     render(<Dashboard data={mockData} config={mockConfig} error={null} refreshTrigger={0} />);
+     
+-    // PowerFlow ist Teil der Daten, die schon da sind, sollte also sichtbar sein
++    // PowerFlow is part of already-available data, so it should be visible
+     expect(screen.getByText(/Live Power Flow/i)).toBeInTheDocument();
+     
+-    // Die Charts warten auf History -> Skeleton sollte da sein. 
++    // Charts wait for history -> skeleton should be present.
+     await waitFor(() => {
+       const skeletons = document.querySelectorAll('.animate-pulse');
+       expect(skeletons.length).toBeGreaterThan(0);
+     });
+   });
+ 
+-  it('zeigt Widget-Inhalte korrekt an, wenn Daten geladen sind', async () => {
++  it('shows widget contents correctly when data is loaded', async () => {
+     render(<Dashboard data={mockData} config={mockConfig} error={null} refreshTrigger={0} />);
+ 
+     await waitFor(() => {
+         expect(screen.getByText(/Return on Investment/i)).toBeInTheDocument();
+     });
+ 
+-    // Pr├╝fen ob Live-Daten (5000W PV) gerendert werden (im PowerFlow oder Stats)
+-    // PowerFlow rendert "5000 W"
++    // Verify live data (5000W PV) is rendered (PowerFlow or stats)
++    // PowerFlow renders "5000 W"
+     expect(screen.getByText('5000 W')).toBeInTheDocument();
+   });
+ 
+-  it('zeigt Fehlermeldung oben an, wenn prop error gesetzt ist', async () => {
++  it('shows error message at the top when error prop is set', async () => {
+     render(<Dashboard data={mockData} config={mockConfig} error="Connection Lost" refreshTrigger={0} />);
+     await waitFor(() => {
+       expect(screen.getByText('Connection Lost')).toBeInTheDocument();
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/PowerFlow.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/PowerFlow.test.tsx"
+index af223bb..fa7d5cf 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/PowerFlow.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/PowerFlow.test.tsx"
+@@ -18,7 +18,7 @@ describe('PowerFlow Component', () => {
+         selfConsumption: 60
+     };
+ 
+-    it('zeigt alle Leistungswerte korrekt an', () => {
++    it('shows all power values correctly', () => {
+         render(<PowerFlow power={mockData.power} soc={mockData.battery.soc} />);
+         
+         // Check PV
+@@ -29,7 +29,7 @@ describe('PowerFlow Component', () => {
+         
+     });
+ 
+-    it('zeigt Status Idle bei 0 W PV', () => {
++    it('shows idle status at 0 W PV', () => {
+         const idlePower = { ...mockData.power, pv: 0 };
+         render(<PowerFlow power={idlePower} soc={50} />);
+         
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/ScenarioPlanner.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ScenarioPlanner.test.tsx"
+index 4dd3b3b..8d7c007 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/ScenarioPlanner.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ScenarioPlanner.test.tsx"
+@@ -28,20 +28,20 @@ describe('ScenarioPlanner Component', () => {
+         (api.getTariffs as any).mockResolvedValue([]);
+     });
+ 
+-    it('├Âffnet Modal beim Klick auf den Trigger Button', async () => {
++    it('opens the modal when clicking the trigger button', async () => {
+         render(<ScenarioPlanner config={mockConfig} />);
+         
+-        // Button klicken, um Modal zu ├Âffnen
++        // Click button to open modal
+         const trigger = screen.getByText(/Scenario Planner/i);
+         fireEvent.click(trigger);
+         
+         expect(screen.getByText(/Upgrade Simulator/i)).toBeInTheDocument();
+         
+-        // Warten bis der interne API Call durch ist, um "act" Warnung zu vermeiden
++        // Wait for the internal API call to avoid "act" warning
+         await waitFor(() => expect(api.getSimulationData).toHaveBeenCalled());
+     });
+ 
+-    it('l├ñdt Daten beim ├ûffnen', async () => {
++    it('loads data when opening', async () => {
+         (api.getSimulationData as any).mockResolvedValue(mockSimData);
+         (api.getTariffs as any).mockResolvedValue([]);
+ 
+@@ -56,13 +56,13 @@ describe('ScenarioPlanner Component', () => {
+             expect(api.getSimulationData).toHaveBeenCalled();
+         });
+ 
+-        // Warten bis Ladevorgang abgeschlossen ist, um "act" Warnung zu vermeiden
++        // Wait until loading is finished to avoid "act" warning
+         await waitFor(() => {
+             expect(screen.queryByText(/Loading historical data/i)).not.toBeInTheDocument();
+         });
+     });
+ 
+-    it('berechnet Szenario wenn Daten da sind', async () => {
++    it('computes scenario when data is available', async () => {
+         (api.getSimulationData as any).mockResolvedValue(mockSimData);
+         (api.getTariffs as any).mockResolvedValue([]);
+ 
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SettingsModal.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SettingsModal.test.tsx"
+index de08127..9386ccc 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SettingsModal.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SettingsModal.test.tsx"
+@@ -32,7 +32,7 @@ describe('SettingsModal Interaction', () => {
+     (api.getExpenses as any).mockResolvedValue([]);
+   });
+ 
+-  it('l├ñdt mit korrekten Initialwerten', async () => {
++  it('loads with correct initial values', async () => {
+     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
+     await waitFor(() => {
+       expect(screen.getByDisplayValue('1.2.3.4')).toBeInTheDocument();
+@@ -40,7 +40,7 @@ describe('SettingsModal Interaction', () => {
+     expect(screen.getByText(/Notifications/i)).toBeInTheDocument();
+   });
+ 
+-  it('wechselt Tabs korrekt', async () => {
++  it('switches tabs correctly', async () => {
+     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
+     const notifTab = screen.getByText(/Notifications/i);
+     fireEvent.click(notifTab);
+@@ -49,7 +49,7 @@ describe('SettingsModal Interaction', () => {
+     });
+   });
+ 
+-  it('ruft onSave mit aktualisierten Daten auf', async () => {
++  it('calls onSave with updated data', async () => {
+     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
+     const ipInput = screen.getByDisplayValue('1.2.3.4');
+     fireEvent.change(ipInput, { target: { value: '192.168.1.100' } });
+@@ -62,40 +62,40 @@ describe('SettingsModal Interaction', () => {
+   });
+ 
+ 
+-  it('konfiguriert Battery Health Notification korrekt', async () => {
++  it('configures battery health notification correctly', async () => {
+     render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
+     
+-    // 1. Zu Notifications wechseln
++    // 1. Switch to Notifications
+     fireEvent.click(screen.getByText(/Notifications/i));
+ 
+-    // 2. Checkbox f├╝r Battery Health finden und aktivieren
++    // 2. Find and enable the Battery Health checkbox
+     const checkboxes = screen.getAllByRole('checkbox');
+-    // Die Battery Health Checkbox ist die 4. in der Liste (Errors, Full, Empty, Health, Smart)
++    // Battery Health checkbox is the 4th in the list (Errors, Full, Empty, Health, Smart)
+     const healthCheckbox = checkboxes[3]; 
+     
+     fireEvent.click(healthCheckbox);
+ 
+-    // 3. Pr├╝fen ob die Zusatzfelder erscheinen (Alert Threshold)
++    // 3. Verify additional fields appear (Alert Threshold)
+     await waitFor(() => {
+         expect(screen.getByText(/Alert Threshold/i)).toBeInTheDocument();
+     });
+ 
+-    // 4. Werte ├ñndern
++    // 4. Change values
+     const thresholdInput = screen.getByDisplayValue('75');
+     fireEvent.change(thresholdInput, { target: { value: '80' } });
+ 
+-    // 5. Speichern
++    // 5. Save
+     fireEvent.click(screen.getByRole('button', { name: /Save Notifications/i }));
+ 
+-    // 6. Validierung
++    // 6. Validate
+     expect(onSaveMock).toHaveBeenCalled();
+     const savedConfig = onSaveMock.mock.calls[0][0];
+     expect(savedConfig.notifications.triggers.batteryHealth).toBe(true);
+     expect(savedConfig.notifications.sohThreshold).toBe(80);
+   });
+ 
+-  it('zeigt Calibration Tab und berechnet Summen korrekt', async () => {
+-      // Config mit DB Totals
++    it('shows Calibration tab and calculates totals correctly', async () => {
++      // Config with DB totals
+       const configWithDb = {
+           ...mockConfig,
+           initialValues: { production: 1000, import: 500, export: 200, financialReturn: 50 },
+@@ -104,8 +104,8 @@ describe('SettingsModal Interaction', () => {
+ 
+       const { container } = render(<SettingsModal currentConfig={configWithDb} onSave={onSaveMock} onClose={onCloseMock} />);
+       
+-      // Suche den Tab f├╝r History/Calibration. 
+-      // Der Text im Button ist "Calibration" (Zeile 413), nicht "History" (Icon)!
++      // Find the tab for History/Calibration.
++      // The button text is "Calibration", not "History" (icon).
+       const calibTab = screen.getAllByRole('button', { name: /Calibration/i })[0]; 
+       fireEvent.click(calibTab);
+ 
+@@ -113,15 +113,15 @@ describe('SettingsModal Interaction', () => {
+           expect(screen.getByText(/Pre-App History/i)).toBeInTheDocument();
+       });
+ 
+-      // Pr├╝fen ob Summen korrekt angezeigt werden (Initial + DB)
++      // Verify totals are displayed correctly (initial + DB)
+       // Production: 1000 + 5000 = 6,000
+       // Note: Value is inside a div along with a span "kWh", so strict string match fails. Use Regex.
+       // Locale might vary, so we match 6 followed by any separator and 000
+       expect(screen.getByText(/6[,.\s]?000/)).toBeInTheDocument();
+       
+-      // Eingabewert ├ñndern (Manual Offset)
++      // Change input value (manual offset)
+       const prodInputs = container.querySelectorAll('input[type="number"]');
+-      // Es gibt viele Inputs, wir suchen den f├╝r Production Offset (Value = 1000)
++      // There are many inputs; find the one for Production offset (value = 1000)
+       const offsetInput = Array.from(prodInputs).find(i => (i as HTMLInputElement).value === '1000');
+       
+       if(offsetInput) {
+@@ -132,20 +132,20 @@ describe('SettingsModal Interaction', () => {
+               expect(onSaveMock).toHaveBeenCalled();
+           });
+           
+-          // Check ob neuer Wert (2000) im Save-Call war
++          // Verify the new value (2000) is in the save call
+           expect(onSaveMock.mock.calls[0][0].initialValues.production).toBe(2000);
+       } else {
+           throw new Error("Offset Input not found");
+       }
+   });
+ 
+-  it('navigiert zum Import Tab', async () => {
++  it('navigates to the import tab', async () => {
+       render(<SettingsModal currentConfig={mockConfig} onSave={onSaveMock} onClose={onCloseMock} />);
+       const importTab = screen.getByRole('button', { name: /Data Import/i });
+       fireEvent.click(importTab);
+       
+       await waitFor(() => {
+-          // Pr├╝ft ob CsvImporter gerendert wird (Key Text)
++          // Verify CsvImporter is rendered (key text)
+           expect(screen.getAllByText(/Click to upload/i).length).toBeGreaterThan(0);
+       });
+   });
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SmartRecommendations.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SmartRecommendations.test.tsx"
+index a20d6eb..79978f9 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/SmartRecommendations.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/SmartRecommendations.test.tsx"
+@@ -20,6 +20,11 @@ describe('SmartRecommendations Logic', () => {
+     { id: 'phone', name: 'Phone Charger', watts: 15, kwhEstimate: 0.02, iconName: 'smartphone', color: 'text-gray-400' }
+   ];
+ 
++  const mockKwhOnlyAppliances: Appliance[] = [
++    // Simulates an appliance saved in "kWh per run" mode (watts omitted/0)
++    { id: 'washer_kwh', name: 'Washer (kWh only)', watts: 0, kwhEstimate: 1.0, durationMinutes: 60, iconName: 'shirt', color: 'text-blue-400', inputMode: 'kwh_per_run' }
++  ];
++
+   // Base props helper
+   const defaultProps = {
+     forecast: null,
+@@ -31,7 +36,7 @@ describe('SmartRecommendations Logic', () => {
+     hasSolcastKey: false
+   };
+ 
+-  it('empfiehlt Ger├ñt NICHT, wenn kein ├£berschuss da ist', () => {
++  it('does NOT recommend an appliance when there is no surplus', () => {
+     render(<SmartRecommendations 
+         {...defaultProps}
+         power={{ grid: 500, battery: 0, pv: 500, load: 1000 }} // Grid Import (Positive)
+@@ -42,44 +47,57 @@ describe('SmartRecommendations Logic', () => {
+     expect(screen.queryByText('Washing Machine')).not.toBeInTheDocument();
+   });
+ 
+-  it('empfiehlt Ger├ñt, wenn genug Grid Export vorhanden ist', () => {
++  it('recommends an appliance when enough grid export is available', () => {
+     render(<SmartRecommendations 
+         {...defaultProps}
+         power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }} // 2500W Export
+-        soc={80} // Batterie fast voll
++        soc={80} // Battery almost full
+     />);
+     
+-    // Header sollte "Smart Usage" zeigen
++    // Header should show "Smart Usage"
+     expect(screen.getByText(/Smart Usage/i)).toBeInTheDocument();
+-    // Waschmaschine (2000W) passt in 2500W Export
++    // Washing machine (2000W) fits into 2500W export
+     expect(screen.getByText('Washing Machine')).toBeInTheDocument();
+   });
+ 
+-  it('blockiert Empfehlung im "Battery Priority" Modus (SOC niedrig, kein Forecast)', () => {
++  it('recommends a kWh-per-run appliance by deriving watts from duration', () => {
++    render(
++      <SmartRecommendations
++        {...defaultProps}
++        appliances={mockKwhOnlyAppliances}
++        power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }} // 2500W export
++        soc={90}
++      />
++    );
++
++    expect(screen.getByText('Washer (kWh only)')).toBeInTheDocument();
++  });
++
++  it('blocks recommendation in "Battery Priority" mode (low SoC, no forecast)', () => {
+     render(<SmartRecommendations 
+         {...defaultProps}
+         power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }} 
+-        soc={20} // Batterie leer!
++        soc={20} // Battery low!
+         // hasSolcastKey=false triggert Fallback-Logik
+     />);
+ 
+-    // Sollte nicht empfohlen werden, da SOC < 80% (Fallback Logic) und kein Forecast Key
+-    // Die Logic besagt: if !hasAnyForecastData -> if soc > 80 allow divert.
++    // Should not recommend because SoC < 80% (fallback logic) and no forecast key
++    // Logic: if !hasAnyForecastData -> if soc > 80 allow divert.
+     expect(screen.queryByText('Washing Machine')).not.toBeInTheDocument();
+     expect(screen.getByText(/Battery Priority/i)).toBeInTheDocument();
+   });
+ 
+-  it('erlaubt Empfehlung bei niedrigem SOC, WENN Forecast extrem positiv ist', () => {
++  it('allows recommendation at low SoC WHEN forecast is extremely positive', () => {
+     render(<SmartRecommendations 
+         {...defaultProps}
+         hasSolcastKey={true}
+-        forecast={{ forecasts: [{ period_end: new Date(Date.now() + 3600000).toISOString(), pv_estimate: 50 }] }} // Riesiger Forecast
++        forecast={{ forecasts: [{ period_end: new Date(Date.now() + 3600000).toISOString(), pv_estimate: 50 }] }} // Huge forecast
+         power={{ grid: -2500, battery: 0, pv: 3000, load: 500 }}
+         soc={20} 
+     />);
+ 
+-    // Hier greift die Logik: forecastRemainingKwh > kwhToFill
+-    // 50 kW Forecast >> 8 kWh needed to fill. => Safe.
++    // Logic: forecastRemainingKwh > kwhToFill
++    // 50 kW forecast >> 8 kWh needed to fill => safe.
+     expect(screen.getByText('Washing Machine')).toBeInTheDocument();
+     expect(screen.getByText(/Battery Safe/i)).toBeInTheDocument();
+   });
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatsCard.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatsCard.test.tsx"
+index 40d4741..7c5c8e3 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatsCard.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatsCard.test.tsx"
+@@ -6,29 +6,29 @@ import { Zap } from 'lucide-react';
+ import React from 'react';
+ 
+ describe('StatsCard Component', () => {
+-    it('rendert Titel und Wert korrekt', () => {
++    it('renders title and value correctly', () => {
+         render(
+             <StatsCard 
+-                title="Produktion" 
++                title="Production" 
+                 value="5.0 kWh" 
+                 icon={<Zap size={16} />} 
+                 valueColor="text-yellow-400" 
+             />
+         );
+ 
+-        expect(screen.getByText('Produktion')).toBeInTheDocument();
++        expect(screen.getByText('Production')).toBeInTheDocument();
+         expect(screen.getByText('5.0 kWh')).toBeInTheDocument();
+     });
+ 
+-    it('zeigt Subtext an wenn vorhanden', () => {
++    it('shows subtext when provided', () => {
+         render(
+             <StatsCard 
+                 title="Test" 
+                 value="100" 
+                 icon={<Zap size={16} />} 
+-                subValue="Details hier"
++                subValue="Details here"
+             />
+         );
+-        expect(screen.getByText('Details hier')).toBeInTheDocument();
++        expect(screen.getByText('Details here')).toBeInTheDocument();
+     });
+ });
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatusTimeline.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatusTimeline.test.tsx"
+index 7fd3237..717be38 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/StatusTimeline.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/StatusTimeline.test.tsx"
+@@ -5,13 +5,13 @@ import StatusTimeline from '../components/StatusTimeline';
+ import React from 'react';
+ 
+ describe('StatusTimeline Component', () => {
+-    it('zeigt Loading State wenn keine Daten', () => {
++    it('shows loading state when there is no data', () => {
+         // @ts-expect-error Testing null prop handling
+         render(<StatusTimeline history={null} />);
+         expect(screen.getByText(/Waiting for data logs/i)).toBeInTheDocument();
+     });
+ 
+-    it('rendert Timeline Balken', () => {
++    it('renders timeline bars', () => {
+         const mockHistory = [
+             { timestamp: '2023-01-01 10:00:00', status: 1, soc: 50 },
+             { timestamp: '2023-01-01 11:00:00', status: 2, soc: 60 }, // Error
+@@ -19,8 +19,8 @@ describe('StatusTimeline Component', () => {
+ 
+         const { container } = render(<StatusTimeline history={mockHistory} />);
+         
+-        // Suche nach Status Texten die im SVG/HTML vorkommen
+-        // Snapshot zeigte "Flawless", "Running", "Active", "Error"
++        // Look for status texts that appear in the rendered SVG/HTML.
++        // Snapshot showed: "Flawless", "Running", "Active", "Error"
+         expect(screen.getAllByText(/Running/i).length).toBeGreaterThan(0);
+         expect(screen.getAllByText(/Error/i).length).toBeGreaterThan(0);
+         
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/WeatherWidget.test.tsx" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/WeatherWidget.test.tsx"
+index 1e84c80..33334d9 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/WeatherWidget.test.tsx"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/WeatherWidget.test.tsx"
+@@ -5,13 +5,13 @@ import WeatherWidget from '../components/WeatherWidget';
+ import React from 'react';
+ 
+ describe('WeatherWidget Component', () => {
+-    it('zeigt Placeholder wenn keine Daten vorhanden', () => {
++    it('shows placeholder when no data is available', () => {
+         const mockConfig = { inverterIp: '1.2.3', currency: 'EUR' }; // Min config
+         const { getByText } = render(<WeatherWidget config={mockConfig} forecast={null} weatherData={null} solcastRateLimited={false} />);
+         expect(getByText(/Add location in settings/i)).toBeInTheDocument();
+     });
+ 
+-    it('zeigt Temperatur und Wetter Code an', () => {
++    it('shows temperature and weather status', () => {
+         const mockConfig = { inverterIp: '1.2.3', currency: 'EUR', latitude: '50', longitude: '10' };
+         const mockWeather = {
+             current: {
+@@ -25,7 +25,7 @@ describe('WeatherWidget Component', () => {
+         expect(screen.getByText(/22.5┬░C/)).toBeInTheDocument();
+     });
+     
+-    it('zeigt Nacht-Modus an', () => {
++    it('shows night mode', () => {
+         const mockConfig = { inverterIp: '1.2.3', currency: 'EUR', latitude: '50', longitude: '10' };
+         const mockWeather = {
+             current: {
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.auth.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.auth.test.ts"
+index 9871e5d..e8467ea 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.auth.test.ts"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.auth.test.ts"
+@@ -265,6 +265,13 @@ describe('Backend API (auth/admin)', () => {
+       .set('Content-Type', 'application/json');
+     expect(ok.status).toBe(200);
+ 
++    const okUrl = await request(app)
++      .post('/api/config')
++      .set('Authorization', `Bearer ${token}`)
++      .send({ inverterIp: 'http://192.168.1.10:80/solar_api/v1/GetPowerFlowRealtimeData.fcgi' })
++      .set('Content-Type', 'application/json');
++    expect(okUrl.status).toBe(200);
++
+     const getRes = await request(app).get('/api/config');
+     expect(getRes.status).toBe(200);
+     expect(getRes.body.inverterIp).toBe('192.168.1.10:80');
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.ingress.basepath.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.ingress.basepath.test.ts"
+new file mode 100644
+index 0000000..ebfed82
+--- /dev/null
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.ingress.basepath.test.ts"
+@@ -0,0 +1,22 @@
++// @vitest-environment jsdom
++
++import { describe, expect, it, vi } from 'vitest';
++
++describe('services/api.ts (ingress base path)', () => {
++  it('prefixes API calls with /api/hassio_ingress/<token>/ when running under Home Assistant ingress', async () => {
++    // Ensure module-level API_BASE is computed from an ingress URL.
++    window.history.pushState({}, '', '/api/hassio_ingress/abc123');
++
++    vi.resetModules();
++
++    const fetchMock = vi.fn(async () => ({ ok: true, json: vi.fn(async () => ({})) }) as any);
++    vi.stubGlobal('fetch', fetchMock);
++
++    const { saveConfig } = await import('../services/api');
++
++    await saveConfig({} as any);
++
++    expect(fetchMock).toHaveBeenCalledTimes(1);
++    expect(fetchMock.mock.calls[0][0]).toBe('/api/hassio_ingress/abc123/api/config');
++  });
++});
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.service.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.service.test.ts"
+index 247cb78..dd693d6 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.service.test.ts"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.service.test.ts"
+@@ -26,7 +26,7 @@ describe('services/api.ts (unit)', () => {
+     await getHistory('day', undefined, undefined, 7);
+ 
+     expect(fetchMock).toHaveBeenCalledTimes(1);
+-    expect(fetchMock.mock.calls[0][0]).toBe('/api/history?range=day&offset=7');
++    expect(fetchMock.mock.calls[0][0]).toBe('api/history?range=day&offset=7');
+   });
+ 
+   it('builds history URL for custom range including start/end', async () => {
+@@ -38,17 +38,21 @@ describe('services/api.ts (unit)', () => {
+     await getHistory('custom', '2026-01-01', '2026-01-02', 0);
+ 
+     expect(fetchMock).toHaveBeenCalledTimes(1);
+-    expect(fetchMock.mock.calls[0][0]).toBe('/api/history?range=custom&offset=0&start=2026-01-01&end=2026-01-02');
++    expect(fetchMock.mock.calls[0][0]).toBe('api/history?range=custom&offset=0&start=2026-01-01&end=2026-01-02');
+   });
+ 
+   it('saveConfig POSTs JSON and throws on non-OK', async () => {
+-    fetchMock.mockResolvedValueOnce({ ok: false } as any);
++    fetchMock.mockResolvedValueOnce({
++      ok: false,
++      status: 400,
++      json: vi.fn(async () => ({ error: 'Invalid inverterIp (expected host[:port])' })),
++    } as any);
+ 
+-    await expect(saveConfig({} as any)).rejects.toThrow('API call failed');
++    await expect(saveConfig({} as any)).rejects.toThrow('Invalid inverterIp');
+ 
+     expect(fetchMock).toHaveBeenCalledTimes(1);
+     const [url, opts] = fetchMock.mock.calls[0];
+-    expect(url).toBe('/api/config');
++    expect(url).toBe('api/config');
+     expect(opts).toMatchObject({ method: 'POST' });
+     expect((opts as any).headers).toMatchObject({ 'Content-Type': 'application/json' });
+   });
+@@ -66,7 +70,7 @@ describe('services/api.ts (unit)', () => {
+     expect(fetchMock).toHaveBeenCalledTimes(1);
+ 
+     const [url, opts] = fetchMock.mock.calls[0];
+-    expect(url).toBe('/api/preview-csv');
++    expect(url).toBe('api/preview-csv');
+     expect((opts as any).method).toBe('POST');
+     expect((opts as any).body).toBeInstanceOf(FormData);
+ 
+@@ -87,7 +91,7 @@ describe('services/api.ts (unit)', () => {
+     expect(res).toEqual({ success: true, imported: 1, failed: 0 });
+ 
+     const [url, opts] = fetchMock.mock.calls[0];
+-    expect(url).toBe('/api/import-csv');
++    expect(url).toBe('api/import-csv');
+     expect((opts as any).method).toBe('POST');
+ 
+     const body = (opts as any).body as FormData;
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.test.ts"
+index 564b57d..6b1c1da 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/tests/api.test.ts"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/api.test.ts"
+@@ -117,6 +117,21 @@ describe('Backend API (integration)', () => {
+     expect(getRes.body.inverterIp).toBe('192.168.1.50');
+   });
+ 
++  it('POST /api/config preserves an explicitly empty appliances list', async () => {
++    const postRes = await request(app)
++      .post('/api/config')
++      .send({ appliances: [] })
++      .set('Content-Type', 'application/json');
++
++    expect(postRes.status).toBe(200);
++    expect(postRes.body).toEqual({ success: true });
++
++    const getRes = await request(app).get('/api/config');
++    expect(getRes.status).toBe(200);
++    expect(Array.isArray(getRes.body.appliances)).toBe(true);
++    expect(getRes.body.appliances.length).toBe(0);
++  });
++
+   it('POST /api/config rejects invalid inverterIp', async () => {
+     const res = await request(app)
+       .post('/api/config')
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ingress.staticpaths.test.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ingress.staticpaths.test.ts"
+new file mode 100644
+index 0000000..14a6dde
+--- /dev/null
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/tests/ingress.staticpaths.test.ts"
+@@ -0,0 +1,23 @@
++import { describe, expect, it } from 'vitest';
++import fs from 'fs';
++import path from 'path';
++
++// This test is intentionally simple: Home Assistant Ingress serves the app under a sub-path.
++// If the built HTML uses absolute paths like "/assets/..." or "/favicon.svg", the UI breaks.
++
++describe('ingress build (static paths)', () => {
++  it('dist/index.html uses only relative asset URLs', () => {
++    const distIndex = path.join(process.cwd(), 'dist', 'index.html');
++    expect(fs.existsSync(distIndex)).toBe(true);
++
++    const html = fs.readFileSync(distIndex, 'utf8');
++
++    // Disallow absolute href/src that start at the root.
++    // Allow protocol URLs (http/https) and anchors (#).
++    const hasAbsoluteHref = /href\s*=\s*"\/(?!\/)/.test(html);
++    const hasAbsoluteSrc = /src\s*=\s*"\/(?!\/)/.test(html);
++
++    expect(hasAbsoluteHref).toBe(false);
++    expect(hasAbsoluteSrc).toBe(false);
++  });
++});
+diff --git "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/vite.config.ts" "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/vite.config.ts"
+index c0ad79e..1afef58 100644
+--- "a/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\up\\/vite.config.ts"
++++ "b/sunflow/sunflow/C:\\Users\\tobia\\AppData\\Local\\Temp\\sunflow-patch-3c1660aa6da546ec9a026e1240d737e1\\ha\\/vite.config.ts"
+@@ -2,10 +2,14 @@
+ /// <reference types="vitest" />
+ import { configDefaults, defineConfig } from 'vitest/config';
+ import react from '@vitejs/plugin-react';
++import tailwindcss from '@tailwindcss/vite';
+ 
+ // https://vitejs.dev/config/
+ export default defineConfig({
+-  plugins: [react()],
++  // Home Assistant Ingress serves the UI under a sub-path.
++  // A relative base keeps asset URLs working regardless of mount point.
++  base: './',
++  plugins: [react(), tailwindcss()],
+   server: {
+     port: 5173, // Frontend on 5173
+     strictPort: true,
